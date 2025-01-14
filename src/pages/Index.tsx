@@ -8,9 +8,9 @@ const Index = () => {
       <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-secondary/10 to-transparent pointer-events-none" />
       
       <header className="mb-8 relative">
-        <h1 className="text-4xl font-bold mb-2 value-text">Option Vault DCA</h1>
+        <h1 className="text-4xl font-bold mb-2 value-text">STRK Option Vault DCA</h1>
         <p className="text-muted-foreground">
-          Automated covered call strategy with DCA reinvestment
+          Automated covered call strategy with DCA reinvestment for STRK tokens
         </p>
       </header>
 

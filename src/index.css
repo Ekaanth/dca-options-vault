@@ -6,25 +6,25 @@
 
 @layer base {
   :root {
-    --background: 240 66% 8%;
+    --background: 240 66% 4%;
     --foreground: 0 0% 100%;
-    --card: 240 66% 18%;
+    --card: 240 66% 8%;
     --card-foreground: 0 0% 100%;
-    --popover: 240 66% 18%;
+    --popover: 240 66% 8%;
     --popover-foreground: 0 0% 100%;
     --primary: 164 100% 50%;
-    --primary-foreground: 240 66% 8%;
+    --primary-foreground: 240 66% 4%;
     --secondary: 261 100% 64%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 240 66% 12%;
-    --muted-foreground: 220 10% 80%;
-    --accent: 240 66% 12%;
+    --muted: 240 66% 8%;
+    --muted-foreground: 220 10% 95%;
+    --accent: 240 66% 8%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 100% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 66% 14%;
-    --input: 240 66% 14%;
-    --ring: 240 66% 14%;
+    --border: 240 66% 10%;
+    --input: 240 66% 10%;
+    --ring: 240 66% 10%;
     --radius: 0.5rem;
   }
 }
@@ -35,7 +35,7 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
-    background: linear-gradient(180deg, #070721 0%, #0C0C4F 100%);
+    background: linear-gradient(180deg, #070721 0%, #0A0A3A 100%);
     min-height: 100vh;
   }
   
@@ -48,13 +48,13 @@
     -webkit-background-clip: text;
     color: transparent;
     font-weight: 700;
-    text-shadow: 0 0 20px rgba(0, 255, 209, 0.2);
+    text-shadow: 0 0 20px rgba(0, 255, 209, 0.3);
   }
 }
 
 .gradient-border {
   position: relative;
-  background: rgba(12, 12, 79, 0.9);
+  background: rgba(10, 10, 58, 0.95);
   border-radius: 0.5rem;
   backdrop-filter: blur(10px);
 }
@@ -73,7 +73,7 @@
 }
 
 .stats-card {
-  background: rgba(12, 12, 79, 0.9);
+  background: rgba(10, 10, 58, 0.95);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(127, 69, 255, 0.2);
   transition: all 0.3s ease;
@@ -82,5 +82,5 @@
 .stats-card:hover {
   border-color: rgba(127, 69, 255, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }

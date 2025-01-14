@@ -31,7 +31,7 @@ export const VaultStats = () => {
             <h3 className="text-2xl font-mono font-bold mt-2 value-text">${tvl.toLocaleString()}</h3>
             <div className="mt-2 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground font-medium">Locked in Options:</span>
+                <span className="text-muted-foreground font-medium">STRK Locked in Options:</span>
                 <span className="text-primary font-semibold">{percentLocked.toFixed(1)}%</span>
               </div>
               <Progress value={percentLocked} className="h-2 bg-secondary/20" />
@@ -47,7 +47,7 @@ export const VaultStats = () => {
       <Card className="stats-card p-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Current Token Price</p>
+            <p className="text-sm font-medium text-muted-foreground">Current STRK Price</p>
             <h3 className="text-2xl font-mono font-bold mt-2 value-text">
               ${currentPrice.toLocaleString(undefined, {maximumFractionDigits: 2})}
             </h3>
@@ -63,7 +63,7 @@ export const VaultStats = () => {
       <Card className="stats-card p-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Active Options</p>
+            <p className="text-sm font-medium text-muted-foreground">Active STRK Options</p>
             <h3 className="text-2xl font-mono font-bold mt-2 value-text">7</h3>
             <p className="text-sm text-muted-foreground mt-2 font-medium">Next expiry in 3d</p>
           </div>

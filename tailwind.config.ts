@@ -38,14 +38,14 @@ export default {
         },
         muted: {
           DEFAULT: "#1A1F2C",
-          foreground: "#B0B5BD",
+          foreground: "#f3f3f3",
         },
         accent: {
           DEFAULT: "#8B5CF6",
           foreground: "#FFFFFF",
         },
         card: {
-          DEFAULT: "#0C0C4F",
+          DEFAULT: "#0A0A3A",
           foreground: "#FFFFFF",
         },
       },
