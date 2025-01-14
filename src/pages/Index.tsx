@@ -1,11 +1,26 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { VaultStats } from "@/components/VaultStats";
+import { VaultDeposit } from "@/components/VaultDeposit";
+import { ActiveOptions } from "@/components/ActiveOptions";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen p-6 space-y-6">
+      <header className="mb-8">
+        <h1 className="text-4xl font-bold mb-2">Option Vault DCA</h1>
+        <p className="text-muted-foreground">
+          Automated covered call strategy with DCA reinvestment
+        </p>
+      </header>
+
+      <VaultStats />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <ActiveOptions />
+        </div>
+        <div>
+          <VaultDeposit />
+        </div>
       </div>
     </div>
   );
