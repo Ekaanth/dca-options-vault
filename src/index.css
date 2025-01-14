@@ -46,9 +46,20 @@
   .value-text {
     background: linear-gradient(90deg, #00FFD1, #7F45FF);
     -webkit-background-clip: text;
-    color: transparent;
+    -webkit-text-fill-color: transparent;
     font-weight: 700;
-    text-shadow: 0 0 20px rgba(0, 255, 209, 0.3);
+    text-shadow: 0 0 20px rgba(0, 255, 209, 0.5);
+    position: relative;
+  }
+
+  /* Add a subtle text outline for better readability */
+  .value-text::before {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: -1;
+    -webkit-text-stroke: 2px rgba(0, 255, 209, 0.2);
   }
 }
 
@@ -69,6 +80,7 @@
   background: linear-gradient(45deg, #00FFD1, #7F45FF);
   border-radius: 0.6rem;
   z-index: -1;
+  opacity: 0.8;
   animation: glow 2s ease-in-out infinite;
 }
 
@@ -83,4 +95,13 @@
   border-color: rgba(127, 69, 255, 0.4);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Add a fallback solid color for gradient text */
+@supports not (background-clip: text) {
+  .value-text {
+    background: none;
+    color: #00FFD1;
+    text-shadow: 0 0 20px rgba(0, 255, 209, 0.5);
+  }
 }
