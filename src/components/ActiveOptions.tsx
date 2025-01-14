@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 
 interface Option {
@@ -16,11 +16,11 @@ interface Option {
   strike: string;
   premium: string;
   expiry: string;
-  status: "Active" | "Pending" | "Expired" | "Exercised";
+  status: "Active" | "Pending" | "Exercised" | "Expired";
   createdAt: Date;
-  lockedAmount: number; // Amount of TVL locked by this option
-  tokenAmount: number; // Amount in tokens
-  tokenPrice: number; // Current price of token
+  lockedAmount: number;
+  tokenAmount: number;
+  tokenPrice: number;
 }
 
 interface VaultBalance {
@@ -31,8 +31,8 @@ interface VaultBalance {
 
 const initialVaultBalance = {
   tvl: 124527.89,
-  tokenBalance: 3.5, // Example: 3.5 ETH
-  tokenPrice: 35579.40, // Example: Current ETH price
+  tokenBalance: 3.5,
+  tokenPrice: 35579.40,
 };
 
 const MAX_OPTIONS_PERCENTAGE = 80;
@@ -46,8 +46,8 @@ const initialOptions = [
     status: "Active",
     createdAt: new Date(),
     lockedAmount: 25000,
-    tokenAmount: 0.7, // 0.7 ETH
-    tokenPrice: 35714.29, // Strike price in USD
+    tokenAmount: 0.7,
+    tokenPrice: 35714.29,
   },
   {
     id: 2,
@@ -57,7 +57,7 @@ const initialOptions = [
     status: "Active",
     createdAt: new Date(),
     lockedAmount: 30000,
-    tokenAmount: 0.83, // ~0.83 ETH
+    tokenAmount: 0.83,
     tokenPrice: 36144.58,
   },
   {
@@ -68,7 +68,7 @@ const initialOptions = [
     status: "Pending",
     createdAt: new Date(),
     lockedAmount: 32169.52,
-    tokenAmount: 0.87, // ~0.87 ETH
+    tokenAmount: 0.87,
     tokenPrice: 36977.61,
   },
 ] as Option[];
@@ -78,22 +78,18 @@ export const ActiveOptions = () => {
   const [vaultBalance, setVaultBalance] = useState<VaultBalance>(initialVaultBalance);
   const { toast } = useToast();
 
-  // Calculate total locked value
   const totalLockedValue = options.reduce((acc, option) => 
     option.status === "Active" ? acc + option.lockedAmount : acc, 0
   );
   const percentageLocked = (totalLockedValue / vaultBalance.tvl) * 100;
 
-  // Handle option exercise
-  const handleOptionExercise = (option: Option) => {
-    // Update vault balance
+  const handleOptionExercise = useCallback((option: Option) => {
     setVaultBalance(prev => ({
       ...prev,
       tvl: prev.tvl - option.lockedAmount + (parseFloat(option.strike.replace(',', '')) * option.tokenAmount),
       tokenBalance: prev.tokenBalance - option.tokenAmount,
     }));
 
-    // Update option status
     setOptions(prev =>
       prev.map(opt =>
         opt.id === option.id
@@ -102,52 +98,50 @@ export const ActiveOptions = () => {
       )
     );
 
-    // Notify user
     toast({
       title: "Option Exercised",
-      description: `${option.tokenAmount} ETH sold at $${option.strike} strike price`,
+      description: `${option.tokenAmount.toFixed(2)} ETH sold at $${option.strike} strike price`,
     });
-  };
+  }, [toast]);
 
-  // Simulate real-time option creation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (percentageLocked < MAX_OPTIONS_PERCENTAGE) {
-        const newTokenAmount = Math.random() * 0.5 + 0.3; // Between 0.3 and 0.8 ETH
-        const newStrikePrice = Math.floor(35000 + Math.random() * 5000);
-        const newLockedAmount = newTokenAmount * newStrikePrice;
-        const newTotalLocked = totalLockedValue + newLockedAmount;
-        
-        if ((newTotalLocked / vaultBalance.tvl) * 100 <= MAX_OPTIONS_PERCENTAGE) {
-          const newOption: Option = {
-            id: options.length + 1,
-            strike: newStrikePrice.toLocaleString(),
-            premium: (0.02 + Math.random() * 0.04).toFixed(2),
-            expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            status: "Pending",
-            createdAt: new Date(),
-            lockedAmount: newLockedAmount,
-            tokenAmount: newTokenAmount,
-            tokenPrice: newStrikePrice,
-          };
+  const createNewOption = useCallback(() => {
+    if (percentageLocked < MAX_OPTIONS_PERCENTAGE) {
+      const newTokenAmount = Math.random() * 0.5 + 0.3;
+      const newStrikePrice = Math.floor(35000 + Math.random() * 5000);
+      const newLockedAmount = newTokenAmount * newStrikePrice;
+      const newTotalLocked = totalLockedValue + newLockedAmount;
+      
+      if ((newTotalLocked / vaultBalance.tvl) * 100 <= MAX_OPTIONS_PERCENTAGE) {
+        const newOption: Option = {
+          id: Date.now(),
+          strike: newStrikePrice.toLocaleString(),
+          premium: (0.02 + Math.random() * 0.04).toFixed(2),
+          expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "Pending",
+          createdAt: new Date(),
+          lockedAmount: newLockedAmount,
+          tokenAmount: newTokenAmount,
+          tokenPrice: newStrikePrice,
+        };
 
-          setOptions(prev => {
-            const updated = [...prev, newOption];
-            return updated.slice(-5);
-          });
+        setOptions(prev => {
+          const updated = [...prev, newOption];
+          return updated.slice(-5);
+        });
 
-          toast({
-            title: "New Option Created",
-            description: `${newOption.tokenAmount.toFixed(2)} ETH | Strike: $${newOption.strike} | Premium: ${newOption.premium} ETH`,
-          });
-        }
+        toast({
+          title: "New Option Created",
+          description: `${newOption.tokenAmount.toFixed(2)} ETH | Strike: $${newOption.strike} | Premium: ${newOption.premium} ETH`,
+        });
       }
-    }, 15000);
+    }
+  }, [percentageLocked, totalLockedValue, vaultBalance.tvl, toast]);
 
+  useEffect(() => {
+    const interval = setInterval(createNewOption, 15000);
     return () => clearInterval(interval);
-  }, [options, totalLockedValue, vaultBalance.tvl]);
+  }, [createNewOption]);
 
-  // Simulate option status changes
   useEffect(() => {
     const statusInterval = setInterval(() => {
       setOptions(prev =>
@@ -155,9 +149,9 @@ export const ActiveOptions = () => {
           if (option.status === "Pending" && Math.random() > 0.5) {
             return { ...option, status: "Active" };
           }
-          // Randomly exercise some active options
           if (option.status === "Active" && Math.random() > 0.9) {
-            handleOptionExercise(option);
+            setTimeout(() => handleOptionExercise(option), 0);
+            return option;
           }
           return option;
         })
@@ -165,7 +159,7 @@ export const ActiveOptions = () => {
     }, 5000);
 
     return () => clearInterval(statusInterval);
-  }, []);
+  }, [handleOptionExercise]);
 
   return (
     <Card className="p-6 gradient-border">
