@@ -35,6 +35,8 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    background: linear-gradient(180deg, #070721 0%, #0C0C4F 100%);
+    min-height: 100vh;
   }
 }
 
@@ -42,6 +44,7 @@
   position: relative;
   background: #0C0C4F;
   border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
 }
 
 .gradient-border::before {
@@ -54,4 +57,24 @@
   background: linear-gradient(45deg, #00FFD1, #7F45FF);
   border-radius: 0.6rem;
   z-index: -1;
+  animation: glow 2s ease-in-out infinite;
+}
+
+.stats-card {
+  background: rgba(12, 12, 79, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(127, 69, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+  border-color: rgba(127, 69, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.value-text {
+  background: linear-gradient(90deg, #00FFD1, #7F45FF);
+  -webkit-background-clip: text;
+  color: transparent;
+  font-weight: 600;
 }
