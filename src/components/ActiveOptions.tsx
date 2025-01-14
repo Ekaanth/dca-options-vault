@@ -207,7 +207,7 @@ export const ActiveOptions = () => {
                         option.status === "Active"
                           ? "bg-green-500/20 text-green-500"
                           : option.status === "Exercised"
-                          ? "bg-blue-500/20 text-blue-500"
+                          ? "bg-blue-500/20 text-black"
                           : "bg-yellow-500/20 text-yellow-500"
                       }`}
                     >
