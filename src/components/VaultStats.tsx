@@ -27,16 +27,16 @@ export const VaultStats = () => {
       <Card className="stats-card p-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-muted-foreground">Total Value Locked</p>
-            <h3 className="text-2xl font-mono font-semibold mt-2 value-text">${tvl.toLocaleString()}</h3>
+            <p className="text-sm font-medium text-muted-foreground">Total Value Locked</p>
+            <h3 className="text-2xl font-mono font-bold mt-2 value-text">${tvl.toLocaleString()}</h3>
             <div className="mt-2 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Locked in Options:</span>
-                <span className="text-primary">{percentLocked.toFixed(1)}%</span>
+                <span className="text-muted-foreground font-medium">Locked in Options:</span>
+                <span className="text-primary font-semibold">{percentLocked.toFixed(1)}%</span>
               </div>
-              <Progress value={percentLocked} className="h-2 bg-secondary/20" indicatorClassName="bg-gradient-to-r from-primary to-secondary" />
+              <Progress value={percentLocked} className="h-2 bg-secondary/20" />
             </div>
-            <p className="text-sm text-green-400 flex items-center mt-2">
+            <p className="text-sm text-green-400 flex items-center mt-2 font-medium">
               +2.5% <ArrowUpRight className="h-3 w-3 ml-1" />
             </p>
           </div>
@@ -47,11 +47,11 @@ export const VaultStats = () => {
       <Card className="stats-card p-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-muted-foreground">Current Token Price</p>
-            <h3 className="text-2xl font-mono font-semibold mt-2 value-text">
+            <p className="text-sm font-medium text-muted-foreground">Current Token Price</p>
+            <h3 className="text-2xl font-mono font-bold mt-2 value-text">
               ${currentPrice.toLocaleString(undefined, {maximumFractionDigits: 2})}
             </h3>
-            <p className={`text-sm flex items-center mt-2 ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`text-sm flex items-center mt-2 font-medium ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
               {priceChange >= 0 ? '+' : ''}{priceChange}% 
               <ArrowUpRight className="h-3 w-3 ml-1" />
             </p>
@@ -63,9 +63,9 @@ export const VaultStats = () => {
       <Card className="stats-card p-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-muted-foreground">Active Options</p>
-            <h3 className="text-2xl font-mono font-semibold mt-2 value-text">7</h3>
-            <p className="text-sm text-muted-foreground mt-2">Next expiry in 3d</p>
+            <p className="text-sm font-medium text-muted-foreground">Active Options</p>
+            <h3 className="text-2xl font-mono font-bold mt-2 value-text">7</h3>
+            <p className="text-sm text-muted-foreground mt-2 font-medium">Next expiry in 3d</p>
           </div>
           <Timer className="h-8 w-8 text-secondary animate-float" />
         </div>
@@ -74,9 +74,9 @@ export const VaultStats = () => {
       <Card className="stats-card p-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-muted-foreground">Total Premium Earned</p>
-            <h3 className="text-2xl font-mono font-semibold mt-2 value-text">$3,241.65</h3>
-            <p className="text-sm text-green-400 flex items-center mt-2">
+            <p className="text-sm font-medium text-muted-foreground">Total Premium Earned</p>
+            <h3 className="text-2xl font-mono font-bold mt-2 value-text">$3,241.65</h3>
+            <p className="text-sm text-green-400 flex items-center mt-2 font-medium">
               +5.2% <ArrowUpRight className="h-3 w-3 ml-1" />
             </p>
           </div>

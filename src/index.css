@@ -17,7 +17,7 @@
     --secondary: 261 100% 64%;
     --secondary-foreground: 0 0% 100%;
     --muted: 240 66% 12%;
-    --muted-foreground: 240 10% 70%;
+    --muted-foreground: 220 10% 80%;
     --accent: 240 66% 12%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 100% 50%;
@@ -38,11 +38,23 @@
     background: linear-gradient(180deg, #070721 0%, #0C0C4F 100%);
     min-height: 100vh;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+  
+  .value-text {
+    background: linear-gradient(90deg, #00FFD1, #7F45FF);
+    -webkit-background-clip: text;
+    color: transparent;
+    font-weight: 700;
+    text-shadow: 0 0 20px rgba(0, 255, 209, 0.2);
+  }
 }
 
 .gradient-border {
   position: relative;
-  background: #0C0C4F;
+  background: rgba(12, 12, 79, 0.9);
   border-radius: 0.5rem;
   backdrop-filter: blur(10px);
 }
@@ -61,20 +73,14 @@
 }
 
 .stats-card {
-  background: rgba(12, 12, 79, 0.7);
+  background: rgba(12, 12, 79, 0.9);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(127, 69, 255, 0.1);
+  border: 1px solid rgba(127, 69, 255, 0.2);
   transition: all 0.3s ease;
 }
 
 .stats-card:hover {
-  border-color: rgba(127, 69, 255, 0.3);
+  border-color: rgba(127, 69, 255, 0.4);
   transform: translateY(-2px);
-}
-
-.value-text {
-  background: linear-gradient(90deg, #00FFD1, #7F45FF);
-  -webkit-background-clip: text;
-  color: transparent;
-  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
