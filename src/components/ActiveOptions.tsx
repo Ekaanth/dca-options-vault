@@ -84,9 +84,15 @@ export const ActiveOptions = () => {
   const percentageLocked = (totalLockedValue / vaultBalance.tvl) * 100;
 
   const handleOptionExercise = useCallback((option: Option) => {
+    // Calculate the strike value in USD
+    const strikeValue = option.tokenAmount * parseFloat(option.strike.replace(',', ''));
+    
+    // Update vault balance:
+    // 1. Subtract the locked tokens
+    // 2. Add the strike price value (which becomes available for new options)
     setVaultBalance(prev => ({
       ...prev,
-      tvl: prev.tvl - option.lockedAmount + (parseFloat(option.strike.replace(',', '')) * option.tokenAmount),
+      tvl: prev.tvl - option.lockedAmount + strikeValue,
       tokenBalance: prev.tokenBalance - option.tokenAmount,
     }));
 
@@ -100,7 +106,7 @@ export const ActiveOptions = () => {
 
     toast({
       title: "Option Exercised",
-      description: `${option.tokenAmount.toFixed(2)} ETH sold at $${option.strike} strike price`,
+      description: `${option.tokenAmount.toFixed(2)} ETH sold at $${option.strike} strike price. Strike value of $${strikeValue.toLocaleString()} added to available TVL.`,
     });
   }, [toast]);
 
@@ -131,7 +137,7 @@ export const ActiveOptions = () => {
 
         toast({
           title: "New Option Created",
-          description: `${newOption.tokenAmount.toFixed(2)} ETH | Strike: $${newOption.strike} | Premium: ${newOption.premium} ETH`,
+          description: `${newOption.tokenAmount.toFixed(2)} ETH | Strike: $${newOption.strike} | Premium: ${newOption.premium} ETH | Locked Value: $${newOption.lockedAmount.toLocaleString()}`,
         });
       }
     }
