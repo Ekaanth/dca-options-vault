@@ -84,15 +84,16 @@ export const ActiveOptions = () => {
   const percentageLocked = (totalLockedValue / vaultBalance.tvl) * 100;
 
   const handleOptionExercise = useCallback((option: Option) => {
-    // Calculate the strike value in USD
-    const strikeValue = option.tokenAmount * parseFloat(option.strike.replace(',', ''));
+    // Calculate the total amount paid by the buyer (strike price × token amount)
+    const strikePrice = parseFloat(option.strike.replace(',', ''));
+    const totalPaid = strikePrice * option.tokenAmount;
     
     // Update vault balance:
-    // 1. Subtract the locked tokens
-    // 2. Add the strike price value (which becomes available for new options)
+    // 1. Remove the locked tokens
+    // 2. Add the total amount paid by the buyer
     setVaultBalance(prev => ({
       ...prev,
-      tvl: prev.tvl - option.lockedAmount + strikeValue,
+      tvl: prev.tvl - option.lockedAmount + totalPaid,
       tokenBalance: prev.tokenBalance - option.tokenAmount,
     }));
 
@@ -106,7 +107,7 @@ export const ActiveOptions = () => {
 
     toast({
       title: "Option Exercised",
-      description: `${option.tokenAmount.toFixed(2)} ETH sold at $${option.strike} strike price. Strike value of $${strikeValue.toLocaleString()} added to available TVL.`,
+      description: `${option.tokenAmount.toFixed(2)} STRK sold at $${option.strike} strike price. Total payment of $${totalPaid.toLocaleString()} added to available TVL.`,
     });
   }, [toast]);
 
@@ -197,9 +198,9 @@ export const ActiveOptions = () => {
               {options.map((option) => (
                 <TableRow key={option.id}>
                   <TableCell className="font-mono">${option.strike}</TableCell>
-                  <TableCell className="font-mono">{option.premium} ETH</TableCell>
+                  <TableCell className="font-mono">{option.premium} STRK</TableCell>
                   <TableCell>{option.expiry}</TableCell>
-                  <TableCell className="font-mono">{option.tokenAmount.toFixed(2)} ETH</TableCell>
+                  <TableCell className="font-mono">{option.tokenAmount.toFixed(2)} STRK</TableCell>
                   <TableCell className="font-mono">${option.lockedAmount.toLocaleString()}</TableCell>
                   <TableCell>
                     <span
