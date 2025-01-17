@@ -6,10 +6,166 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
-      [_ in never]: never
+      users: {
+        Row: {
+          id: number
+          wallet_address: string
+          first_connected_at: string
+          last_connected_at: string
+          created_at: string
+          total_deposits: number
+          total_borrows: number
+          active_positions: number
+        }
+        Insert: {
+          wallet_address: string
+          first_connected_at: string
+          last_connected_at: string
+          total_deposits?: number
+          total_borrows?: number
+          active_positions?: number
+        }
+        Update: {
+          wallet_address?: string
+          first_connected_at?: string
+          last_connected_at?: string
+          total_deposits?: number
+          total_borrows?: number
+          active_positions?: number
+        }
+      }
+      vaults: {
+        Row: {
+          id: number
+          user_id: number
+          strategy_type: 'covered_call' | 'protective_put' | 'collar'
+          collateral_amount: number
+          collateral_token: string
+          strike_price: number
+          expiry_timestamp: string
+          premium_earned: number
+          ltv_ratio: number
+          health_factor: number
+          liquidation_threshold: number
+          status: 'active' | 'liquidated' | 'closed'
+          created_at: string
+          updated_at: string
+          tx_hash: string
+        }
+        Insert: {
+          user_id: number
+          strategy_type: 'covered_call' | 'protective_put' | 'collar'
+          collateral_amount: number
+          collateral_token: string
+          strike_price: number
+          expiry_timestamp: string
+          premium_earned?: number
+          ltv_ratio: number
+          health_factor: number
+          liquidation_threshold: number
+          status: 'active' | 'liquidated' | 'closed'
+          tx_hash: string
+        }
+        Update: {
+          strategy_type?: 'covered_call' | 'protective_put' | 'collar'
+          collateral_amount?: number
+          strike_price?: number
+          expiry_timestamp?: string
+          premium_earned?: number
+          ltv_ratio?: number
+          health_factor?: number
+          liquidation_threshold?: number
+          status?: 'active' | 'liquidated' | 'closed'
+          tx_hash?: string
+        }
+      }
+      options: {
+        Row: {
+          id: number
+          vault_id: number
+          option_type: 'call' | 'put'
+          strike_price: number
+          expiry_timestamp: string
+          premium: number
+          status: 'active' | 'exercised' | 'expired'
+          created_at: string
+          tx_hash: string
+        }
+        Insert: {
+          vault_id: number
+          option_type: 'call' | 'put'
+          strike_price: number
+          expiry_timestamp: string
+          premium: number
+          status: 'active' | 'exercised' | 'expired'
+          tx_hash: string
+        }
+        Update: {
+          strike_price?: number
+          expiry_timestamp?: string
+          premium?: number
+          status?: 'active' | 'exercised' | 'expired'
+          tx_hash?: string
+        }
+      }
+      loans: {
+        Row: {
+          id: number
+          vault_id: number
+          amount: number
+          interest_rate: number
+          start_timestamp: string
+          end_timestamp: string
+          status: 'active' | 'repaid' | 'liquidated'
+          created_at: string
+          tx_hash: string
+        }
+        Insert: {
+          vault_id: number
+          amount: number
+          interest_rate: number
+          start_timestamp: string
+          end_timestamp: string
+          status: 'active' | 'repaid' | 'liquidated'
+          tx_hash: string
+        }
+        Update: {
+          amount?: number
+          interest_rate?: number
+          end_timestamp?: string
+          status?: 'active' | 'repaid' | 'liquidated'
+          tx_hash?: string
+        }
+      }
+      liquidation_events: {
+        Row: {
+          id: number
+          vault_id: number
+          loan_id: number
+          liquidation_price: number
+          liquidation_amount: number
+          liquidator_address: string
+          created_at: string
+          tx_hash: string
+        }
+        Insert: {
+          vault_id: number
+          loan_id: number
+          liquidation_price: number
+          liquidation_amount: number
+          liquidator_address: string
+          tx_hash: string
+        }
+        Update: {
+          liquidation_price?: number
+          liquidation_amount?: number
+          liquidator_address?: string
+          tx_hash?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
