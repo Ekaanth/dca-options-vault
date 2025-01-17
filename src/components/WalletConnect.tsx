@@ -3,18 +3,27 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useDispatch } from 'react-redux';
+import { setConnectionDetails } from "@/store/connectionAction";
 
 export function WalletConnect() {
   const { address } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const { toast } = useToast();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     async function handleUserRecord() {
       if (!address) return;
 
       try {
+                // Dispatch the action to update the Redux store
+                dispatch(
+                  setConnectionDetails({
+                    address: address,
+                  })
+                );
         console.log('Checking user record for address:', address);
         
         // Check if user exists

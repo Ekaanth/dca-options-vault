@@ -1,39 +1,15 @@
 import { useState } from "react";
-import { useAccount, useContract } from "@starknet-react/core";
+import { Contract, RpcProvider, uint256 } from "starknet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { uint256, RpcProvider } from "starknet";
-import type { Abi } from "starknet";
+import { useSelector } from "react-redux";
+import { useAccount } from "@starknet-react/core";
 
 // STRK token contract address on Starknet
 const STRK_TOKEN_ADDRESS = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
-
-// ERC20 ABI for approve and transfer
-const ERC20_ABI = [
-  {
-    name: "approve",
-    type: "function",
-    inputs: [
-      { name: "spender", type: "felt252" },
-      { name: "amount", type: "Uint256" }
-    ],
-    outputs: [{ name: "success", type: "felt252" }],
-    state_mutability: "external"
-  },
-  {
-    name: "transfer",
-    type: "function",
-    inputs: [
-      { name: "recipient", type: "felt252" },
-      { name: "amount", type: "Uint256" }
-    ],
-    outputs: [{ name: "success", type: "felt252" }],
-    state_mutability: "external"
-  }
-] as const satisfies Abi;
 
 // Initialize provider
 const provider = new RpcProvider({
@@ -41,18 +17,14 @@ const provider = new RpcProvider({
 });
 
 export function VaultDeposit() {
-  const { address } = useAccount();
   const { toast } = useToast();
-  const [amount, setAmount] = useState("");
-  const [isDepositing, setIsDepositing] = useState(false);
-
-  const { contract: strkToken } = useContract({
-    address: STRK_TOKEN_ADDRESS,
-    abi: ERC20_ABI
-  });
-
+  const { address } = useAccount();
+  const [amount, setAmount] = useState<string>("");
+  const [isDepositing, setIsDepositing] = useState<boolean>(false);
+  const connection = useSelector((state: { connection: { provider: RpcProvider, address: string } }) => state.connection);
+  console.log("connection", connection);
   const handleDeposit = async () => {
-    if (!address || !strkToken || !amount) return;
+    console.log('handleDeposit called');
 
     try {
       setIsDepositing(true);
@@ -61,28 +33,40 @@ export function VaultDeposit() {
       const amountBN = BigInt(parseFloat(amount) * 10**18);
       const amountUint256 = uint256.bnToUint256(amountBN);
 
-      // First, approve the vault contract to spend tokens
-      const approveResponse = await strkToken.invoke("approve", [
-        import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
-        amountUint256
-      ]);
+      // Get contract instance
+      const strkTokenABI = await provider.getClassAt(STRK_TOKEN_ADDRESS);
+      console.log('strkTokenABI:', strkTokenABI);
+      if (!strkTokenABI || !strkTokenABI.abi) {
+        throw new Error('Failed to fetch contract ABI');
+      }
 
+      const newContract = new Contract(
+        strkTokenABI.abi,
+        STRK_TOKEN_ADDRESS,
+        connection?.provider
+      );
+
+      console.log("wallet address", address);
+      console.log("contract details", newContract);
+      const response = await newContract.approve('0x015f8afd7ccaf2e33cc8b340416f29037ff8d03620f6bd7311939b01a04eec4d', 1);
+      console.log(">> response", response);
+      
       // Wait for transaction to be accepted
-      await provider.waitForTransaction(approveResponse.transaction_hash);
+      await provider.waitForTransaction(response.transaction_hash);
 
-      // Then transfer tokens to the vault
-      const transferResponse = await strkToken.invoke("transfer", [
-        import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
-        amountUint256
-      ]);
+      // // Then transfer tokens to the vault
+      // const transferResponse = await vaultContract.transfer(
+      //   import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+      //   amountUint256
+      // );
 
-      await provider.waitForTransaction(transferResponse.transaction_hash);
+      // await provider.waitForTransaction(transferResponse.transaction_hash);
 
       // Create deposit record in database
       const { data: userData } = await supabase
         .from('users')
         .select('id')
-        .eq('wallet_address', address)
+        .eq('wallet_address', connection.address)
         .single();
 
       if (!userData?.id) {
@@ -94,7 +78,7 @@ export function VaultDeposit() {
           p_user_id: userData.id,
           p_amount: amount,
           p_token_address: STRK_TOKEN_ADDRESS,
-          p_tx_hash: transferResponse.transaction_hash
+          // p_tx_hash: transferResponse.transaction_hash
         });
 
       if (error) throw error;
@@ -117,10 +101,6 @@ export function VaultDeposit() {
       setIsDepositing(false);
     }
   };
-
-  if (!address) {
-    return null;
-  }
 
   return (
     <Card>

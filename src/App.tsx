@@ -6,33 +6,37 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import { StarknetProvider } from "./lib/StarknetProvider";
 import { WalletConnect } from "./components/WalletConnect";
+import { Provider } from 'react-redux';
+import store from "./store/store";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <StarknetProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen">
-          <header className="border-b">
-            <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-              <h1 className="text-xl font-bold">DCA Options Vault</h1>
-              <WalletConnect />
-            </div>
-          </header>
-          <main className="container mx-auto px-4 py-8">
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-              </Routes>
-            </BrowserRouter>
-          </main>
-        </div>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </StarknetProvider>
+  <Provider store={store}>
+    <StarknetProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <div className="min-h-screen">
+            <header className="border-b">
+              <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 className="text-xl font-bold">DCA Options Vault</h1>
+                <WalletConnect />
+              </div>
+            </header>
+            <main className="container mx-auto px-4 py-8">
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                </Routes>
+              </BrowserRouter>
+            </main>
+          </div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </StarknetProvider>
+  </Provider>
 );
 
 export default App;
