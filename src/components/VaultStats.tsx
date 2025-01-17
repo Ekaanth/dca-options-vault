@@ -5,14 +5,17 @@ import { useAccount } from "@starknet-react/core";
 import { useStarkPrice } from "@/hooks/useStarkPrice";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useActivePositions } from "@/hooks/useActivePositions";
+import { useTotalValueLocked } from "@/hooks/useTotalValueLocked";
 
 export const VaultStats = () => {
   const { address } = useAccount();
+  const { activePositions, loading: loadingPositions } = useActivePositions();
+  const { tvl, loading: loadingTvl, error: errorTvl } = useTotalValueLocked();
   const { price: currentPrice, priceChange, isLoading, error, refetch } = useStarkPrice();
   
-  const tvl = 124527.89;
   const lockedInOptions = 87169.52;
-  const percentLocked = (lockedInOptions / tvl) * 100;
+  const percentLocked = tvl > 0 ? (lockedInOptions / tvl) * 100 : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -67,7 +70,9 @@ export const VaultStats = () => {
             <p className="text-sm font-medium text-muted-foreground">Total Value Locked</p>
             {address ? (
               <>
-                <h3 className="text-2xl font-mono font-bold mt-2 value-text">${tvl.toLocaleString()}</h3>
+                <h3 className="text-2xl font-mono font-bold mt-2 value-text">
+                  {loadingTvl ? "Loading..." : `$${tvl.toLocaleString()}`}
+                </h3>
                 <div className="mt-2 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground font-medium">STRK Locked in Options:</span>
@@ -96,8 +101,7 @@ export const VaultStats = () => {
             <p className="text-sm font-medium text-muted-foreground">Active STRK Options</p>
             {address ? (
               <>
-                <h3 className="text-2xl font-mono font-bold mt-2 value-text">7</h3>
-                <p className="text-sm text-muted-foreground mt-2 font-medium">Next expiry in 3d</p>
+                <h3 className="text-2xl font-mono font-bold mt-2 value-text">{activePositions}</h3>
               </>
             ) : (
               <div className="flex flex-col items-center justify-center py-4">

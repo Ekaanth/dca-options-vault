@@ -5,54 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { uint256, RpcProvider } from "starknet";
-import type { Abi } from "starknet";
+import { uint256 } from "starknet";
+import { STRK_TOKEN_ABI } from "@/abi/STRKToken.abi";
 
 // STRK token contract address on Starknet
 const STRK_TOKEN_ADDRESS = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
 
-// ERC20 ABI for approve and transfer
-const ERC20_ABI = [
-  {
-    name: "approve",
-    type: "function",
-    inputs: [
-      { name: "spender", type: "felt252" },
-      { name: "amount", type: "Uint256" }
-    ],
-    outputs: [{ name: "success", type: "felt252" }],
-    state_mutability: "external"
-  },
-  {
-    name: "transfer",
-    type: "function",
-    inputs: [
-      { name: "recipient", type: "felt252" },
-      { name: "amount", type: "Uint256" }
-    ],
-    outputs: [{ name: "success", type: "felt252" }],
-    state_mutability: "external"
-  }
-] as const satisfies Abi;
-
-// Initialize provider
-const provider = new RpcProvider({
-  nodeUrl: `https://starknet-sepolia.infura.io/v3/${import.meta.env.VITE_INFURA_API_KEY}`,
-});
-
 export function VaultDeposit() {
-  const { address } = useAccount();
+  const { address, account } = useAccount();
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
   const [isDepositing, setIsDepositing] = useState(false);
 
   const { contract: strkToken } = useContract({
     address: STRK_TOKEN_ADDRESS,
-    abi: ERC20_ABI
+    abi: STRK_TOKEN_ABI
   });
 
   const handleDeposit = async () => {
-    if (!address || !strkToken || !amount) return;
+    if (!address || !strkToken || !amount || !account) return;
 
     try {
       setIsDepositing(true);
@@ -62,22 +33,33 @@ export function VaultDeposit() {
       const amountUint256 = uint256.bnToUint256(amountBN);
 
       // First, approve the vault contract to spend tokens
-      const approveResponse = await strkToken.invoke("approve", [
-        import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
-        amountUint256
-      ]);
+      const approveResponse = await account.execute({
+        contractAddress: STRK_TOKEN_ADDRESS,
+        entrypoint: "approve",
+        calldata: [
+          import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+          amountUint256.low,
+          amountUint256.high
+        ]
+      });
 
       // Wait for transaction to be accepted
-      await provider.waitForTransaction(approveResponse.transaction_hash);
+      const tx = await account.waitForTransaction(approveResponse.transaction_hash);
+      console.log(tx)
 
       // Then transfer tokens to the vault
-      const transferResponse = await strkToken.invoke("transfer", [
-        import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
-        amountUint256
-      ]);
+      const transferResponse = await account.execute({
+        contractAddress: STRK_TOKEN_ADDRESS,
+        entrypoint: "transfer",
+        calldata: [
+          import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+          amountUint256.low,
+          amountUint256.high
+        ]
+      });
 
-      await provider.waitForTransaction(transferResponse.transaction_hash);
-
+      const tx2 = await account.waitForTransaction(transferResponse.transaction_hash);
+      console.log(tx2)
       // Create deposit record in database
       const { data: userData } = await supabase
         .from('users')
