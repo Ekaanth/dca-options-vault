@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,163 +10,125 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { useAccount } from "@starknet-react/core";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Option {
   id: number;
-  strike: string;
+  vault_id: number;
+  option_type: 'call' | 'put';
+  strike_price: string;
+  expiry_timestamp: string;
   premium: string;
-  expiry: string;
-  status: "Active" | "Pending" | "Exercised" | "Expired";
-  createdAt: Date;
-  lockedAmount: number;
-  tokenAmount: number;
-  tokenPrice: number;
+  status: 'active' | 'pending' | 'exercised' | 'expired';
+  created_at: string;
+  tx_hash: string;
 }
 
-interface VaultBalance {
-  tvl: number;
-  tokenBalance: number;
-  tokenPrice: number;
+interface Vault {
+  id: number;
+  collateral_amount: number;
 }
 
-const initialVaultBalance = {
-  tvl: 124527.89,
-  tokenBalance: 3.5,
-  tokenPrice: 35579.40,
-};
-
-const MAX_OPTIONS_PERCENTAGE = 80;
-
-const initialOptions = [
-  {
-    id: 1,
-    strike: "35,000",
-    premium: "0.05",
-    expiry: "2024-03-21",
-    status: "Active",
-    createdAt: new Date(),
-    lockedAmount: 25000,
-    tokenAmount: 0.7,
-    tokenPrice: 35714.29,
-  },
-  {
-    id: 2,
-    strike: "36,000",
-    premium: "0.04",
-    expiry: "2024-03-28",
-    status: "Active",
-    createdAt: new Date(),
-    lockedAmount: 30000,
-    tokenAmount: 0.83,
-    tokenPrice: 36144.58,
-  },
-  {
-    id: 3,
-    strike: "37,000",
-    premium: "0.03",
-    expiry: "2024-04-04",
-    status: "Pending",
-    createdAt: new Date(),
-    lockedAmount: 32169.52,
-    tokenAmount: 0.87,
-    tokenPrice: 36977.61,
-  },
-] as Option[];
-
-export const ActiveOptions = () => {
-  const [options, setOptions] = useState<Option[]>(initialOptions);
-  const [vaultBalance, setVaultBalance] = useState<VaultBalance>(initialVaultBalance);
+export function ActiveOptions() {
+  const { address } = useAccount();
+  const [options, setOptions] = useState<(Option & { vault: Vault })[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [tvl, setTvl] = useState(0);
+
+  // Fetch options and TVL
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!address) return;
+
+      try {
+        setIsLoading(true);
+
+        // Get user ID first
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('wallet_address', address)
+          .single();
+
+        if (!userData?.id) return;
+
+        // Fetch options with their associated vaults
+        const { data: optionsData, error: optionsError } = await supabase
+          .from('options')
+          .select(`
+            *,
+            vault:vaults (
+              id,
+              collateral_amount
+            )
+          `)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        if (optionsError) throw optionsError;
+
+        // Calculate TVL from deposits and withdrawals
+        const { data: deposits } = await supabase
+          .from('deposits')
+          .select('amount')
+          .eq('status', 'confirmed');
+
+        const { data: withdrawals } = await supabase
+          .from('withdrawals')
+          .select('amount')
+          .eq('status', 'confirmed');
+
+        const totalDeposits = deposits?.reduce((sum, tx) => 
+          sum + Number(tx.amount), 0
+        ) || 0;
+
+        const totalWithdrawals = withdrawals?.reduce((sum, tx) => 
+          sum + Number(tx.amount), 0
+        ) || 0;
+
+        const calculatedTvl = totalDeposits - totalWithdrawals;
+        setTvl(calculatedTvl);
+        setOptions(optionsData || []);
+
+      } catch (error) {
+        console.error('Error fetching options:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch options data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [address, toast]);
 
   const totalLockedValue = options.reduce((acc, option) => 
-    option.status === "Active" ? acc + option.lockedAmount : acc, 0
+    option.status === "active" ? acc + Number(option.vault.collateral_amount) : acc, 0
   );
-  const percentageLocked = (totalLockedValue / vaultBalance.tvl) * 100;
+  const percentageLocked = tvl > 0 ? (totalLockedValue / tvl) * 100 : 0;
 
-  const handleOptionExercise = useCallback((option: Option) => {
-    // Calculate the total amount paid by the buyer (strike price × token amount)
-    const strikePrice = parseFloat(option.strike.replace(',', ''));
-    const totalPaid = strikePrice * option.tokenAmount;
-    
-    // Update vault balance:
-    // 1. Remove the locked tokens
-    // 2. Add the total amount paid by the buyer
-    setVaultBalance(prev => ({
-      ...prev,
-      tvl: prev.tvl - option.lockedAmount + totalPaid,
-      tokenBalance: prev.tokenBalance - option.tokenAmount,
-    }));
-
-    setOptions(prev =>
-      prev.map(opt =>
-        opt.id === option.id
-          ? { ...opt, status: "Exercised" }
-          : opt
-      )
+  if (!address) {
+    return (
+      <Card className="p-6">
+        <div className="text-center text-muted-foreground">
+          Connect your wallet to view options
+        </div>
+      </Card>
     );
+  }
 
-    toast({
-      title: "Option Exercised",
-      description: `${option.tokenAmount.toFixed(2)} STRK sold at $${option.strike} strike price. Total payment of $${totalPaid.toLocaleString()} added to available TVL.`,
-    });
-  }, [toast]);
-
-  const createNewOption = useCallback(() => {
-    if (percentageLocked < MAX_OPTIONS_PERCENTAGE) {
-      const newTokenAmount = Math.random() * 0.5 + 0.3;
-      const newStrikePrice = Math.floor(35000 + Math.random() * 5000);
-      const newLockedAmount = newTokenAmount * newStrikePrice;
-      const newTotalLocked = totalLockedValue + newLockedAmount;
-      
-      if ((newTotalLocked / vaultBalance.tvl) * 100 <= MAX_OPTIONS_PERCENTAGE) {
-        const newOption: Option = {
-          id: Date.now(),
-          strike: newStrikePrice.toLocaleString(),
-          premium: (0.02 + Math.random() * 0.04).toFixed(2),
-          expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "Pending",
-          createdAt: new Date(),
-          lockedAmount: newLockedAmount,
-          tokenAmount: newTokenAmount,
-          tokenPrice: newStrikePrice,
-        };
-
-        setOptions(prev => {
-          const updated = [...prev, newOption];
-          return updated.slice(-5);
-        });
-
-        toast({
-          title: "New Option Created",
-          description: `${newOption.tokenAmount.toFixed(2)} ETH | Strike: $${newOption.strike} | Premium: ${newOption.premium} ETH | Locked Value: $${newOption.lockedAmount.toLocaleString()}`,
-        });
-      }
-    }
-  }, [percentageLocked, totalLockedValue, vaultBalance.tvl, toast]);
-
-  useEffect(() => {
-    const interval = setInterval(createNewOption, 15000);
-    return () => clearInterval(interval);
-  }, [createNewOption]);
-
-  useEffect(() => {
-    const statusInterval = setInterval(() => {
-      setOptions(prev =>
-        prev.map(option => {
-          if (option.status === "Pending" && Math.random() > 0.5) {
-            return { ...option, status: "Active" };
-          }
-          if (option.status === "Active" && Math.random() > 0.9) {
-            setTimeout(() => handleOptionExercise(option), 0);
-            return option;
-          }
-          return option;
-        })
-      );
-    }, 5000);
-
-    return () => clearInterval(statusInterval);
-  }, [handleOptionExercise]);
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="text-center">Loading options...</div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 gradient-border">
@@ -182,45 +144,61 @@ export const ActiveOptions = () => {
           <Progress value={percentageLocked} className="h-2" />
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Strike Price</TableHead>
-                <TableHead>Premium</TableHead>
-                <TableHead>Expiry</TableHead>
-                <TableHead>Token Amount</TableHead>
-                <TableHead>Locked Value</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {options.map((option) => (
-                <TableRow key={option.id}>
-                  <TableCell className="font-mono">${option.strike}</TableCell>
-                  <TableCell className="font-mono">{option.premium} STRK</TableCell>
-                  <TableCell>{option.expiry}</TableCell>
-                  <TableCell className="font-mono">{option.tokenAmount.toFixed(2)} STRK</TableCell>
-                  <TableCell className="font-mono">${option.lockedAmount.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        option.status === "Active"
-                          ? "bg-green-500/20 text-green-500"
-                          : option.status === "Exercised"
-                          ? "bg-blue-500/20 text-black"
-                          : "bg-yellow-500/20 text-yellow-500"
-                      }`}
-                    >
-                      {option.status}
-                    </span>
-                  </TableCell>
+        {options.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            No active options
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Strike Price</TableHead>
+                  <TableHead>Premium</TableHead>
+                  <TableHead>Expiry</TableHead>
+                  <TableHead>Locked Value</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {options.map((option) => (
+                  <TableRow key={option.id}>
+                    <TableCell className="font-mono">
+                      {option.option_type.toUpperCase()}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      ${Number(option.strike_price).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      {Number(option.premium).toFixed(6)} STRK
+                    </TableCell>
+                    <TableCell>
+                      {new Date(option.expiry_timestamp).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      ${Number(option.vault.collateral_amount).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          option.status === "active"
+                            ? "bg-green-500/20 text-green-500"
+                            : option.status === "exercised"
+                            ? "bg-blue-500/20 text-black"
+                            : "bg-yellow-500/20 text-yellow-500"
+                        }`}
+                      >
+                        {option.status.charAt(0).toUpperCase() + option.status.slice(1)}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
     </Card>
   );
-};
+}
