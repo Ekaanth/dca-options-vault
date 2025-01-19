@@ -15,6 +15,7 @@ import { useAccount } from "@starknet-react/core";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { uint256 } from "starknet";
 
 interface Option {
   id: number;
@@ -35,11 +36,107 @@ interface Vault {
 }
 
 export function ActiveOptions() {
-  const { address } = useAccount();
   const [options, setOptions] = useState<(Option & { vault: Vault })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [tvl, setTvl] = useState(0);
+  const { address, account } = useAccount();
+
+  const handleBuy = async(optionId: number) => {
+    console.log("Buy option with ID:", optionId);
+
+    const optionIdBN = BigInt(1);
+    const amountBN = BigInt(parseFloat("0.00000000000001") * 10**18);
+
+    const optionIdUint256 = uint256.bnToUint256(optionIdBN);
+    const amountUint256 = uint256.bnToUint256(amountBN);
+    // Call withdraw_tokens function on the vault contract
+    const buyResponse = await account.execute({
+      contractAddress: import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+      entrypoint: "buy_option",
+      calldata: [
+        optionIdUint256.low,
+        optionIdUint256.high,
+        amountUint256.low,
+        amountUint256.high
+      ]
+    });
+
+    await account.waitForTransaction(buyResponse.transaction_hash);
+
+    // Update option status and tx hash in database
+    const { error } = await supabase
+      .from('options')
+      .update({ 
+        status: 'active',
+        tx_hash: buyResponse.transaction_hash 
+      })
+      .eq('id', optionId);
+
+    if (error) {
+      console.error('Error updating option:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update option status",
+        variant: "destructive"
+      });
+    }
+  };
+  const handleExercise = async (optionId: number) => {
+    if (!account) return;
+
+    try {
+      const optionIdBN = BigInt(1);
+      const optionIdUint256 = uint256.bnToUint256(optionIdBN);
+      const amountBN = BigInt(parseFloat("0.00000000000001") * 10**18);
+
+    const amountUint256 = uint256.bnToUint256(amountBN);
+
+      const cancelResponse = await account.execute({
+        contractAddress: import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+        entrypoint: "exercise_option",
+        calldata: [
+          optionIdUint256.low,
+          optionIdUint256.high,
+          amountUint256.low,
+          amountUint256.high
+        ]
+      });
+
+      await account.waitForTransaction(cancelResponse.transaction_hash);
+
+      // Update option status in database
+      const { error } = await supabase
+        .from('options')
+        .update({
+          status: 'exercised',
+          tx_hash: cancelResponse.transaction_hash
+        })
+        .eq('id', optionId);
+
+      if (error) {
+        console.error('Error updating option:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update option status",
+          variant: "destructive"
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: "Option exercised successfully"
+      });
+
+    } catch (error) {
+      console.error('Error cancelling option:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel option",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Fetch options and TVL
   useEffect(() => {
@@ -166,6 +263,7 @@ export function ActiveOptions() {
                   <TableHead>Expiry</TableHead>
                   <TableHead>Locked Value</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -216,6 +314,13 @@ export function ActiveOptions() {
                           <p>View transaction</p>
                         </TooltipContent>
                       </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      {option.status === 'pending' ? (
+                        <Button onClick={() => handleBuy(option.id)}>Buy</Button>
+                      ) : option.status === 'active' ? (
+                        <Button onClick={() => handleExercise(option.id)}>Exercise</Button>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))}
