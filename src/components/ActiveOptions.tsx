@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { useAccount } from "@starknet-react/core";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Option {
   id: number;
@@ -64,7 +67,7 @@ export function ActiveOptions() {
               collateral_amount
             )
           `)
-          .eq('status', 'active')
+          .eq('user_id', userData.id)
           .order('created_at', { ascending: false });
 
         if (optionsError) throw optionsError;
@@ -175,7 +178,7 @@ export function ActiveOptions() {
                       ${Number(option.strike_price).toLocaleString()}
                     </TableCell>
                     <TableCell className="font-mono">
-                      {Number(option.premium).toFixed(6)} STRK
+                      {Number(option.premium).toFixed(2)} STRK
                     </TableCell>
                     <TableCell>
                       {new Date(option.expiry_timestamp).toLocaleDateString()}
@@ -183,7 +186,7 @@ export function ActiveOptions() {
                     <TableCell className="font-mono">
                       ${Number(option.vault.collateral_amount).toLocaleString()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="flex items-center gap-2">
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           option.status === "active"
@@ -195,6 +198,21 @@ export function ActiveOptions() {
                       >
                         {option.status.charAt(0).toUpperCase() + option.status.slice(1)}
                       </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 text-muted-foreground hover:text-primary"
+                            onClick={() => window.open(`https://sepolia.starkscan.co/tx/${option.tx_hash}`, '_blank')}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View transaction</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))}

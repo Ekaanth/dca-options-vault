@@ -76,12 +76,13 @@ export function VaultManagement({ onTransactionComplete }: VaultManagementProps)
       await supabase
         .from('options')
         .insert({
+          user_id: userData.id,
           vault_id: vaultData.id,
           option_type: 'call',
           strike_price: (0.1).toFixed(18),
           expiry_timestamp: new Date(Date.now() + (5 * 60 * 1000)),
           premium: (10).toFixed(18),
-          status: 'active',
+          status: 'pending',
           tx_hash: createOptionResponse.transaction_hash,
         });
 

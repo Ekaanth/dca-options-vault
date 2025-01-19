@@ -47,6 +47,7 @@ CREATE TABLE vaults (
 -- Create options table
 CREATE TABLE options (
     id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     vault_id BIGINT REFERENCES vaults(id) ON DELETE CASCADE,
     option_type option_type NOT NULL,
     strike_price DECIMAL(36,18) NOT NULL,
@@ -59,40 +60,12 @@ CREATE TABLE options (
     CONSTRAINT future_expiry CHECK (expiry_timestamp > created_at)
 );
 
--- Create loans table
-CREATE TABLE loans (
-    id BIGSERIAL PRIMARY KEY,
-    vault_id BIGINT REFERENCES vaults(id) ON DELETE CASCADE,
-    amount DECIMAL(36,18) NOT NULL,
-    interest_rate DECIMAL(5,2) NOT NULL,
-    start_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
-    status loan_status NOT NULL DEFAULT 'active',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    tx_hash TEXT NOT NULL,
-    CONSTRAINT positive_amount CHECK (amount > 0),
-    CONSTRAINT valid_interest CHECK (interest_rate > 0),
-    CONSTRAINT valid_duration CHECK (end_timestamp > start_timestamp)
-);
-
--- Create liquidation_events table
-CREATE TABLE liquidation_events (
-    id BIGSERIAL PRIMARY KEY,
-    vault_id BIGINT REFERENCES vaults(id) ON DELETE CASCADE,
-    loan_id BIGINT REFERENCES loans(id) ON DELETE CASCADE,
-    liquidation_price DECIMAL(36,18) NOT NULL,
-    liquidation_amount DECIMAL(36,18) NOT NULL,
-    liquidator_address TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    tx_hash TEXT NOT NULL,
-    CONSTRAINT positive_liquidation CHECK (liquidation_amount > 0)
-);
-
 -- Create indexes for performance
 CREATE INDEX idx_users_wallet ON users(wallet_address);
 CREATE INDEX idx_vaults_user ON vaults(user_id);
 CREATE INDEX idx_vaults_status ON vaults(status);
 CREATE INDEX idx_options_vault ON options(vault_id);
+CREATE INDEX idx_options_user ON options(user_id);
 CREATE INDEX idx_options_status ON options(status);
 CREATE INDEX idx_loans_vault ON loans(vault_id);
 CREATE INDEX idx_loans_status ON loans(status);
