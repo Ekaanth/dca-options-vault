@@ -1,11 +1,7 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowUpRight, Wallet, Timer, LineChart, DollarSign, LockIcon, RefreshCw, AlertCircle, TrendingUp } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Card } from "@/components/ui/card";
+import { Timer, LineChart, DollarSign, LockIcon,TrendingUp } from "lucide-react";
 import { useAccount } from "@starknet-react/core";
 import { useStarkPrice } from "@/hooks/useStarkPrice";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useActivePositions } from "@/hooks/useActivePositions";
 import { useTotalValueLocked } from "@/hooks/useTotalValueLocked";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,15 +13,11 @@ interface PremiumStats {
 
 export function VaultStats() {
   const { address } = useAccount();
-  const { tvl, error: errorTvl } = useTotalValueLocked();
   const [tvlStrk, setTvlStrk] = useState<string>("0");
   const [activeOptionsCount, setActiveOptionsCount] = useState<number>(0);
   const [premiumStats, setPremiumStats] = useState<PremiumStats>({ totalPremium: 0, dailyGrowth: 0 });
   const [isDataLoading, setIsDataLoading] = useState(true);
   const { price: strkPrice, isLoading: isPriceLoading } = useStarkPrice();
-
-  const lockedInOptions = 87169.52;
-  const percentLocked = tvl > 0 ? (lockedInOptions / tvl) * 100 : 0;
 
   // Fetch TVL and Premium Stats
   useEffect(() => {
