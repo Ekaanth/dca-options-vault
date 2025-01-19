@@ -2,13 +2,13 @@ import type { Abi } from "starknet";
 
 export const VAULT_CONTRACT_ABI = [
   {
-    "type": "impl",
     "name": "SimpleVault",
+    "type": "impl",
     "interface_name": "game::Vault::ISimpleVault"
   },
   {
-    "type": "struct",
     "name": "core::integer::u256",
+    "type": "struct",
     "members": [
       {
         "name": "low",
@@ -21,8 +21,8 @@ export const VAULT_CONTRACT_ABI = [
     ]
   },
   {
-    "type": "enum",
     "name": "core::bool",
+    "type": "enum",
     "variants": [
       {
         "name": "False",
@@ -35,8 +35,8 @@ export const VAULT_CONTRACT_ABI = [
     ]
   },
   {
-    "type": "struct",
     "name": "game::Vault::VaultOption",
+    "type": "struct",
     "members": [
       {
         "name": "creator",
@@ -69,12 +69,12 @@ export const VAULT_CONTRACT_ABI = [
     ]
   },
   {
-    "type": "interface",
     "name": "game::Vault::ISimpleVault",
+    "type": "interface",
     "items": [
       {
-        "type": "function",
         "name": "deposit",
+        "type": "function",
         "inputs": [
           {
             "name": "amount",
@@ -85,8 +85,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "external"
       },
       {
-        "type": "function",
         "name": "withdraw",
+        "type": "function",
         "inputs": [
           {
             "name": "shares",
@@ -97,8 +97,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "external"
       },
       {
-        "type": "function",
         "name": "user_balance_of",
+        "type": "function",
         "inputs": [
           {
             "name": "account",
@@ -113,8 +113,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "external"
       },
       {
-        "type": "function",
         "name": "contract_total_supply",
+        "type": "function",
         "inputs": [],
         "outputs": [
           {
@@ -124,8 +124,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "external"
       },
       {
-        "type": "function",
         "name": "create_option",
+        "type": "function",
         "inputs": [
           {
             "name": "strike_price",
@@ -148,8 +148,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "external"
       },
       {
-        "type": "function",
         "name": "exercise_option",
+        "type": "function",
         "inputs": [
           {
             "name": "option_id",
@@ -164,8 +164,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "external"
       },
       {
-        "type": "function",
         "name": "cancel_option",
+        "type": "function",
         "inputs": [
           {
             "name": "option_id",
@@ -176,8 +176,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "external"
       },
       {
-        "type": "function",
         "name": "get_option_details",
+        "type": "function",
         "inputs": [
           {
             "name": "option_id",
@@ -192,8 +192,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "view"
       },
       {
-        "type": "function",
         "name": "get_next_option_id",
+        "type": "function",
         "inputs": [],
         "outputs": [
           {
@@ -203,8 +203,8 @@ export const VAULT_CONTRACT_ABI = [
         "state_mutability": "view"
       },
       {
-        "type": "function",
         "name": "get_total_locked_amount",
+        "type": "function",
         "inputs": [],
         "outputs": [
           {
@@ -216,8 +216,8 @@ export const VAULT_CONTRACT_ABI = [
     ]
   },
   {
-    "type": "constructor",
     "name": "constructor",
+    "type": "constructor",
     "inputs": [
       {
         "name": "token",
@@ -226,9 +226,9 @@ export const VAULT_CONTRACT_ABI = [
     ]
   },
   {
-    "type": "event",
-    "name": "game::Vault::SimpleVault::Event",
     "kind": "enum",
+    "name": "game::Vault::SimpleVault::Event",
+    "type": "event",
     "variants": []
   }
 ] as const satisfies Abi; 
