@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { uint256 } from "starknet";
+import { useStarkPrice } from "@/hooks/useStarkPrice";
 
 interface VaultManagementProps {
   onTransactionComplete: () => void;
@@ -16,6 +17,7 @@ interface VaultManagementProps {
 export function VaultManagement({ onTransactionComplete }: VaultManagementProps) {
   const { address, account } = useAccount();
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  const { price } = useStarkPrice();
   const { toast } = useToast();
   const [isCreatingOption, setIsCreatingOption] = useState(false);
 
@@ -28,11 +30,11 @@ export function VaultManagement({ onTransactionComplete }: VaultManagementProps)
     if (!address || !account) return;
 
     try {
-      setIsCreatingOption(true);
-
+      setIsCreatingOption(true);   
+      const strikePrice = (price + price * 2/100);
       // Convert strike price and amount to Uint256 format
-      const strikePriceBN = BigInt(1 * 10**18); 
-      const amountBN = BigInt(0.01 * 10**18);
+      const strikePriceBN = BigInt(strikePrice * 10**18); 
+      const amountBN = BigInt(5 * 10**18);
       const strikePriceUint256 = uint256.bnToUint256(strikePriceBN);
       const amountUint256 = uint256.bnToUint256(amountBN);
 
@@ -79,9 +81,10 @@ export function VaultManagement({ onTransactionComplete }: VaultManagementProps)
           user_id: userData.id,
           vault_id: vaultData.id,
           option_type: 'call',
-          strike_price: (0.1).toFixed(18),
+          strike_price: (strikePrice).toFixed(2),
+          locked_amount: (5).toFixed(2),
           expiry_timestamp: new Date(Date.now() + (5 * 60 * 1000)),
-          premium: (10).toFixed(18),
+          premium: (2).toFixed(2),
           status: 'pending',
           tx_hash: createOptionResponse.transaction_hash,
         });

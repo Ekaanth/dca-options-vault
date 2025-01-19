@@ -53,10 +53,13 @@ CREATE TABLE options (
     strike_price DECIMAL(36,18) NOT NULL,
     expiry_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     premium DECIMAL(36,18) NOT NULL,
-    status option_status NOT NULL DEFAULT 'active',
+    locked_amount DECIMAL(36,18) NOT NULL,
+    status option_status NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     tx_hash TEXT NOT NULL,
+    
     CONSTRAINT positive_premium CHECK (premium > 0),
+    CONSTRAINT positive_locked_amount CHECK (locked_amount > 0),
     CONSTRAINT future_expiry CHECK (expiry_timestamp > created_at)
 );
 

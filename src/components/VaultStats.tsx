@@ -44,7 +44,7 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
         const { data: totalPremiumData, error: premiumError } = await supabase
           .from('options')
           .select('premium, created_at')
-          .eq('status', 'active');
+          .eq('status', ['active', 'executed']);
 
         if (premiumError) throw premiumError;
 
@@ -60,7 +60,7 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
         const { data: dailyPremiumData, error: dailyError } = await supabase
           .from('options')
           .select('premium')
-          .eq('status', 'active')
+          .in('status', ['active', 'executed'])
           .gte('created_at', yesterday.toISOString());
 
         if (dailyError) throw dailyError;

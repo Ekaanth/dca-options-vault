@@ -23,6 +23,7 @@ interface Option {
   strike_price: string;
   expiry_timestamp: string;
   premium: string;
+  locked_amount: string;
   status: 'active' | 'pending' | 'exercised' | 'expired';
   created_at: string;
   tx_hash: string;
@@ -186,7 +187,7 @@ export function ActiveOptions() {
                       {new Date(option.expiry_timestamp).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="font-mono">
-                      ${Number(option.vault.collateral_amount).toLocaleString()}
+                      ${Number(option.locked_amount).toLocaleString()}
                     </TableCell>
                     <TableCell className="flex items-center gap-2">
                       <span
