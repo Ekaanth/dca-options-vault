@@ -153,6 +153,7 @@ export function ActiveOptions() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>ID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Strike Price</TableHead>
                   <TableHead>Premium</TableHead>
@@ -164,6 +165,9 @@ export function ActiveOptions() {
               <TableBody>
                 {options.map((option) => (
                   <TableRow key={option.id}>
+                    <TableCell className="font-mono">
+                      {option.id}
+                    </TableCell>
                     <TableCell className="font-mono">
                       {option.option_type.toUpperCase()}
                     </TableCell>

@@ -253,6 +253,97 @@ export function VaultManagement() {
       setIsWithdrawing(false);
     }
   };
+  const handleCreateOptions = async () => {
+    if (!address || !account || !vaultContract) return;
+
+    try {
+      setIsWithdrawing(true);
+
+      // Convert strike price and amount to Uint256 format
+      const strikePriceBN = BigInt(1 * 10**18); 
+      const amountBN = BigInt(0.01 * 10**18);
+      const strikePriceUint256 = uint256.bnToUint256(strikePriceBN);
+      const amountUint256 = uint256.bnToUint256(amountBN);
+
+      // Get current block number and add 10 blocks for expiry
+      const currentBlock = await account.getBlock('latest');
+      const expiryBlock = currentBlock.block_number + 10;
+
+      // Call create_option function on the vault contract
+      const createOptionResponse = await account.execute({
+        contractAddress: import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+        entrypoint: "create_option",
+        calldata: [
+          strikePriceUint256.low,
+          strikePriceUint256.high,
+          expiryBlock.toString(),
+          amountUint256.low,
+          amountUint256.high
+        ]
+      });
+
+      console.log("createOptionResponse", createOptionResponse);
+      
+      // Wait for transaction and get receipt with return data
+      const receipt = await account.waitForTransaction(createOptionResponse.transaction_hash);
+      console.log("Transaction receipt:", receipt);
+
+      // Get the option ID from the return data
+      // const optionId = receipt.events?.[0]?.data?.[0] || '0';
+      // console.log("Created option ID:", optionId);
+
+      // Database operations with option ID...
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('wallet_address', address)
+        .single();
+
+      if (userError || !userData?.id) {
+        throw new Error('User not found');
+      }
+
+      const { data: vaultData, error: vaultError } = await supabase
+        .from('vaults')
+        .select('id')
+        .eq('user_id', userData.id)
+        .single();
+
+      if (vaultError || !vaultData?.id) {
+        throw new Error('Vault not found');
+      }
+
+      // Create option record in database with option ID
+      const { error: optionError } = await supabase
+        .from('options')
+        .insert({
+          vault_id: vaultData.id,
+          option_type: 'call',
+          strike_price: (0.1).toFixed(18),
+          expiry_timestamp: new Date(Date.now() + (5 * 60 * 1000)),
+          premium: (10).toFixed(18),
+          status: 'active',
+          tx_hash: createOptionResponse.transaction_hash,
+        });
+
+      if (optionError) throw optionError;
+
+      toast({
+        title: "Option Created Successfully",
+        description: `Created option  with strike price 1 STRK`,
+      });
+
+    } catch (error) {
+      console.error('Create option error:', error);
+      toast({
+        title: "Option Creation Failed", 
+        description: error instanceof Error ? error.message : "Failed to create option",
+        variant: "destructive",
+      });
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
 
   if (!address) {
     return null;
@@ -341,7 +432,16 @@ export function VaultManagement() {
             </div>
           </TabsContent>
         </Tabs>
+
+
+      <div className="mt-9">
+
+      <button onClick={handleCreateOptions} className="w-full bg-blue-500 text-white p-2 rounded-md">
+          Create Options
+        </button>
+      </div>
       </CardContent>
+
     </Card>
   );
 }
