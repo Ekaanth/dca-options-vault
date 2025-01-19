@@ -171,14 +171,13 @@ export function VaultManagement() {
 
       // Convert amount to Uint256 format
       const amountBN = BigInt(parseFloat(withdrawAmount) * 10**18);
-      const amountUint256 = uint256.bnToUint256(amountBN);
 
       // Call withdraw_tokens function on the vault contract
       const withdrawResponse = await account.execute({
         contractAddress: import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
         entrypoint: "withdraw",
         calldata: [
-        "100","0"
+          withdrawAmount.toString() ,"0"
         ]
       });
 
@@ -369,14 +368,6 @@ export function VaultManagement() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-muted-foreground">Amount to deposit</label>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleSetMaxDeposit}
-                    disabled={isLoadingBalance}
-                  >
-                    Max: {isLoadingBalance ? "Loading..." : `${formattedBalance} STRK`}
-                  </Button>
                 </div>
                 <Input
                   type="number"
@@ -403,14 +394,6 @@ export function VaultManagement() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-muted-foreground">Amount to withdraw</label>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleSetMaxWithdraw}
-                    disabled={isLoadingMax}
-                  >
-                    Max: {isLoadingMax ? "Loading..." : `${Number(maxWithdraw).toFixed(6)} STRK`}
-                  </Button>
                 </div>
                 <Input
                   type="number"

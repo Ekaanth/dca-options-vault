@@ -9,7 +9,7 @@ import { uint256 } from "starknet";
 import { STRK_TOKEN_ABI } from "@/abi/STRKToken.abi";
 
 // Contract addresses
-const STRK_TOKEN_ADDRESS = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+const STRK_TOKEN_ADDRESS = "0x36ca7e3d294a8579a515e6721f93ad0b6c007a11ba3a5e14159bef8f5bfd7f2";
 const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS;
 
 interface VaultDepositProps {
