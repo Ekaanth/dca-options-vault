@@ -1,5 +1,5 @@
 import { VaultStats } from "@/components/VaultStats";
-import { VaultDeposit } from "@/components/VaultDeposit";
+import { VaultManagement } from "@/components/VaultDeposit";
 import { ActiveOptions } from "@/components/ActiveOptions";
 import { useAccount } from "@starknet-react/core";
 import { Card } from "@/components/ui/card";
@@ -27,7 +27,7 @@ const Index = () => {
             <ActiveOptions />
           </div>
           <div>
-            <VaultDeposit />
+            <VaultManagement />
           </div>
         </div>
       ) : (
