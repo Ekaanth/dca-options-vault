@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAccount, useContract } from "@starknet-react/core";
+import { useAccount, useBalance, useContract } from "@starknet-react/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
@@ -30,6 +30,16 @@ export function VaultWithdraw({ onTransactionComplete, updateTrigger }: VaultWit
     abi: VAULT_CONTRACT_ABI
   });
 
+  const { data: balance, isLoading: isLoadingBalance, refetch: refetchBalance } = useBalance({
+    address: address ?? undefined,
+    token: STRK_TOKEN_ADDRESS,
+  });
+
+    // Refresh balance when updateTrigger changes
+    useEffect(() => {
+        refetchBalance();
+      }, [updateTrigger, refetchBalance]);
+
   // Fetch max withdraw amount
   const fetchMaxWithdraw = useCallback(async () => {
     if (!address) return;
@@ -44,16 +54,27 @@ export function VaultWithdraw({ onTransactionComplete, updateTrigger }: VaultWit
 
       if (!userData?.id) return;
 
-      const { data: deposits, error } = await supabase
+        // Get all deposits
+        const { data: deposits } = await supabase
         .from('deposits')
         .select('amount')
-        .eq('user_id', userData.id)
         .eq('status', 'deposit');
 
-      if (error) throw error;
+        const { data: withdrawals } = await supabase
+        .from('withdrawals')
+        .select('amount')
+        .eq('status', 'deposit');
 
-      const total = deposits?.reduce((sum, deposit) => sum + Number(deposit.amount), 0) || 0;
-      setMaxWithdraw(total.toString());
+        const totalDeposits = deposits?.reduce((sum, tx) => 
+        sum + Number(tx.amount), 0
+        ) || 0;
+
+        const totalWithdrawals = withdrawals?.reduce((sum, tx) => 
+        sum + Number(tx.amount), 0
+        ) || 0;
+
+        const calculatedTvl = totalDeposits - totalWithdrawals;
+      setMaxWithdraw(calculatedTvl.toString());
     } catch (error) {
       console.error('Error fetching max withdraw:', error);
     } finally {
@@ -83,7 +104,10 @@ export function VaultWithdraw({ onTransactionComplete, updateTrigger }: VaultWit
       const withdrawResponse = await account.execute({
         contractAddress: VAULT_CONTRACT_ADDRESS,
         entrypoint: "withdraw",
-        calldata: [amountUint256.low, amountUint256.high]
+        calldata: [
+            withdrawAmount.toString(),
+            "0",
+        ]
       });
       await account.waitForTransaction(withdrawResponse.transaction_hash);
 

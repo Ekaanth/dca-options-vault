@@ -11,7 +11,11 @@ interface PremiumStats {
   dailyGrowth: number;
 }
 
-export function VaultStats() {
+interface VaultStatsProps {
+  updateTrigger: number;
+}
+
+export function VaultStats({ updateTrigger }: VaultStatsProps) {
   const { address } = useAccount();
   const [tvlStrk, setTvlStrk] = useState<string>("0");
   const [activeOptionsCount, setActiveOptionsCount] = useState<number>(0);
@@ -111,7 +115,7 @@ export function VaultStats() {
     };
 
     fetchData();
-  }, [address]);
+  }, [address, updateTrigger]);
 
   // Calculate USD value
   const tvlUsd = Number(tvlStrk) * (strkPrice || 0);
