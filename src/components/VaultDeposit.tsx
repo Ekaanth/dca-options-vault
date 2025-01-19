@@ -8,9 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { uint256 } from "starknet";
 import { STRK_TOKEN_ABI } from "@/abi/STRKToken.abi";
+import { VAULT_CONTRACT_ABI } from "@/abi/VaultContract.abi";
 
 // STRK token contract address on Starknet
 const STRK_TOKEN_ADDRESS = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS;
 
 export function VaultManagement() {
   const { address, account } = useAccount();
@@ -31,7 +33,16 @@ export function VaultManagement() {
   // Format the balance for display
   const formattedBalance = balance ? (Number(balance.value) / 1e18).toFixed(6) : "0.000000";
 
-  // Fetch max withdraw amount (sum of pending deposits)
+  const { contract: strkToken } = useContract({
+    address: STRK_TOKEN_ADDRESS,
+    abi: STRK_TOKEN_ABI
+  });
+
+  const { contract: vaultContract } = useContract({
+    address: VAULT_CONTRACT_ADDRESS,
+    abi: VAULT_CONTRACT_ABI
+  });
+  // Fetch max withdraw amount (sum of confirmed deposits)
   useEffect(() => {
     const fetchMaxWithdraw = async () => {
       if (!address) return;
@@ -49,7 +60,7 @@ export function VaultManagement() {
           .from('deposits')
           .select('amount')
           .eq('user_id', userData.id)
-          .eq('status', 'pending');
+          .eq('status', 'deposit');
 
         if (error) throw error;
 
@@ -74,11 +85,71 @@ export function VaultManagement() {
   };
 
   const handleDeposit = async () => {
-    if (!address || !depositAmount || !account) return;
+    if (!address || !strkToken || !depositAmount || !account) return;
 
     try {
       setIsDepositing(true);
-      // ... rest of deposit logic ...
+
+      // Convert amount to Uint256 format
+      const amountBN = BigInt(parseFloat(depositAmount) * 10**18);
+      const amountUint256 = uint256.bnToUint256(amountBN);
+
+      // First, approve the vault contract to spend tokens
+      const approveResponse = await account.execute({
+        contractAddress: STRK_TOKEN_ADDRESS,
+        entrypoint: "approve",
+        calldata: [
+          import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+          amountUint256.low,
+          amountUint256.high
+        ]
+      });
+
+      // Wait for transaction to be accepted
+      const tx = await account.waitForTransaction(approveResponse.transaction_hash);
+      console.log(tx)
+
+      // Then transfer tokens to the vault
+      const transferResponse = await account.execute({
+        contractAddress: STRK_TOKEN_ADDRESS,
+        entrypoint: "transfer",
+        calldata: [
+          import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+          amountUint256.low,
+          amountUint256.high
+        ]
+      });
+
+      const tx2 = await account.waitForTransaction(transferResponse.transaction_hash);
+      console.log(tx2)
+      // Create deposit record in database
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id')
+        .eq('wallet_address', address)
+        .single();
+
+      if (!userData?.id) {
+        throw new Error('User not found');
+      }
+
+      const { data: deposit, error } = await supabase
+        .rpc('create_deposit', {
+          p_user_id: userData.id,
+          p_amount: depositAmount,
+          p_token_address: STRK_TOKEN_ADDRESS,
+          p_tx_hash: transferResponse.transaction_hash
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Deposit Successful",
+        description: `Deposited ${depositAmount} STRK into vault`,
+      });
+
+      // Clear input
+      setDepositAmount("");
     } catch (error) {
       console.error('Deposit error:', error);
       toast({
@@ -92,11 +163,72 @@ export function VaultManagement() {
   };
 
   const handleWithdraw = async () => {
-    if (!address || !withdrawAmount || !account) return;
+    if (!address || !withdrawAmount || !account || !vaultContract) return;
 
     try {
       setIsWithdrawing(true);
-      // ... rest of withdraw logic ...
+
+      // Convert amount to Uint256 format
+      const amountBN = BigInt(parseFloat(withdrawAmount) * 10**18);
+      const amountUint256 = uint256.bnToUint256(amountBN);
+
+      // Call withdraw_tokens function on the vault contract
+      const withdrawResponse = await account.execute({
+        contractAddress: import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+        entrypoint: "withdraw",
+        calldata: [
+          STRK_TOKEN_ADDRESS, // token address
+          amountUint256.low,  // amount low
+          amountUint256.high  // amount high
+        ]
+      });
+
+      // Wait for transaction to be accepted
+      await account.waitForTransaction(withdrawResponse.transaction_hash);
+
+      // Create withdrawal record in database
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id')
+        .eq('wallet_address', address)
+        .single();
+
+      if (!userData?.id) {
+        throw new Error('User not found');
+      }
+
+      // Create withdrawal record using the same RPC as deposits
+      const { data: deposit, error } = await supabase
+        .rpc('create_deposit', {
+          p_user_id: userData.id,
+          p_amount: withdrawAmount,
+          p_token_address: STRK_TOKEN_ADDRESS,
+          p_tx_hash: withdrawResponse.transaction_hash,
+          p_type: 'withdraw'  // Specify this is a withdrawal
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Withdrawal Successful",
+        description: `Withdrawn ${withdrawAmount} STRK from vault`,
+      });
+
+      // Clear input
+      setWithdrawAmount("");
+      
+      // Refresh the max withdraw amount
+      const { data: deposits, error: fetchError } = await supabase
+        .from('deposits')
+        .select('amount')
+        .eq('user_id', userData.id)
+        .eq('status', 'deposit');
+
+      if (!fetchError && deposits) {
+        const total = deposits.reduce((sum, deposit) => sum + Number(deposit.amount), 0) || 0;
+        setMaxWithdraw(total.toString());
+      }
+
     } catch (error) {
       console.error('Withdraw error:', error);
       toast({

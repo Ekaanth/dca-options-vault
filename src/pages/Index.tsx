@@ -26,7 +26,7 @@ const Index = () => {
           <div className="lg:col-span-2">
             <ActiveOptions />
           </div>
-          <div>
+          <div className="lg:col-span-1">
             <VaultManagement />
           </div>
         </div>
