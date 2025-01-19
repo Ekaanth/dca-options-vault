@@ -1,16 +1,22 @@
 import { VaultStats } from "@/components/VaultStats";
-import { VaultManagement } from "@/components/VaultDeposit";
+import { VaultManagement } from "@/components/vault/VaultManagement";
 import { useAccount } from "@starknet-react/core";
 import { Card } from "@/components/ui/card";
-import { ArrowUpRight, DollarSign, LockIcon, RefreshCw, AlertCircle, Wallet, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, RefreshCw, AlertCircle, Wallet, ArrowDownRight } from "lucide-react";
 import { VaultOverview } from "@/components/vault/VaultOverview";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStarkPrice } from "@/hooks/useStarkPrice";
+import { useState } from "react";
 
 const Index = () => {
   const { address } = useAccount();
   const { price: strkPrice, isLoading: isPriceLoading, priceChange, error, refetch } = useStarkPrice();
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+
+  const handleTransactionComplete = () => {
+    setUpdateTrigger(prev => prev + 1);
+  };
 
   return (
     <div className="min-h-screen p-6 space-y-6 relative">
@@ -73,7 +79,7 @@ const Index = () => {
         </div>
       </header>
 
-     {address ?  <VaultStats /> : null}
+     {address ?  <VaultStats updateTrigger={updateTrigger} /> : null}
 
       {address ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -81,7 +87,7 @@ const Index = () => {
             <VaultOverview />
           </div>
           <div className="lg:col-span-1">
-            <VaultManagement />
+            <VaultManagement onTransactionComplete={handleTransactionComplete} />
           </div>
         </div>
       ) : (

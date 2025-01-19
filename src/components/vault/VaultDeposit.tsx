@@ -57,7 +57,10 @@ export function VaultDeposit({ onTransactionComplete, updateTrigger }: VaultDepo
       const approveResponse = await account.execute({
         contractAddress: STRK_TOKEN_ADDRESS,
         entrypoint: "approve",
-        calldata: [VAULT_CONTRACT_ADDRESS, amountUint256.low, amountUint256.high]
+        calldata: [
+            amountUint256.low, 
+            amountUint256.high
+        ]
       });
       await account.waitForTransaction(approveResponse.transaction_hash);
 
@@ -65,7 +68,10 @@ export function VaultDeposit({ onTransactionComplete, updateTrigger }: VaultDepo
       const transferResponse = await account.execute({
         contractAddress: STRK_TOKEN_ADDRESS,
         entrypoint: "transfer",
-        calldata: [VAULT_CONTRACT_ADDRESS, amountUint256.low, amountUint256.high]
+        calldata: [
+            amountUint256.low, 
+            amountUint256.high
+        ]
       });
       await account.waitForTransaction(transferResponse.transaction_hash);
 
@@ -111,14 +117,6 @@ export function VaultDeposit({ onTransactionComplete, updateTrigger }: VaultDepo
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm text-muted-foreground">Amount to deposit</label>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleSetMaxDeposit}
-              disabled={isLoadingBalance}
-            >
-              Max: {isLoadingBalance ? "Loading..." : `${formattedBalance} STRK`}
-            </Button>
           </div>
           <Input
             type="number"
@@ -133,7 +131,6 @@ export function VaultDeposit({ onTransactionComplete, updateTrigger }: VaultDepo
         <Button
           className="w-full"
           onClick={handleDeposit}
-          disabled={isDepositing || !depositAmount || Number(depositAmount) > Number(formattedBalance)}
         >
           {isDepositing ? "Depositing..." : "Deposit STRK"}
         </Button>

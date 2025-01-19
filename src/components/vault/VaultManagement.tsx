@@ -5,13 +5,17 @@ import { VaultWithdraw } from "./VaultWithdraw";
 import { useAccount } from "@starknet-react/core";
 import { useState } from "react";
 
-export function VaultManagement() {
+interface VaultManagementProps {
+  onTransactionComplete: () => void;
+}
+
+export function VaultManagement({ onTransactionComplete }: VaultManagementProps) {
   const { address } = useAccount();
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
   // Function to trigger updates in child components
   const handleTransactionComplete = () => {
-    setUpdateTrigger(prev => prev + 1);
+    onTransactionComplete();
   };
 
   if (!address) {
