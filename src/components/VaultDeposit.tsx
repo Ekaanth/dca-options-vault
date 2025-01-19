@@ -23,6 +23,9 @@ export function VaultManagement() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [maxWithdraw, setMaxWithdraw] = useState<string>("0");
   const [isLoadingMax, setIsLoadingMax] = useState(true);
+  const [optionId, setOptionId] = useState("");
+  const [isExercising, setIsExercising] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Use useBalance hook to get STRK balance
   const { data: balance, isLoading: isLoadingBalance } = useBalance({
@@ -344,11 +347,111 @@ export function VaultManagement() {
     }
   };
 
+
+  // Add this function in VaultManagement component
+const handleExerciseOption = async () => {
+  if (!address || !account || !vaultContract) return;
+
+  try {
+    setIsExercising(true);
+    // Convert amount to Uint256 format
+    const amountBN = BigInt(parseFloat("0.01") * 10**18);
+    const amountUint256 = uint256.bnToUint256(amountBN);
+    const optionIdUint256 = uint256.bnToUint256(BigInt(optionId));
+
+    const exerciseResponse = await account.execute({
+      contractAddress: VAULT_CONTRACT_ADDRESS,
+      entrypoint: "exercise_option",
+      calldata: [
+        optionIdUint256.low,
+        optionIdUint256.high,
+        amountUint256.low,
+        amountUint256.high
+      ]
+    });
+
+    await account.waitForTransaction(exerciseResponse.transaction_hash);
+
+    // Update option status in database
+    const { error: updateError } = await supabase
+      .from('options')
+      .update({ 
+        status: 'exercised',
+        tx_hash: exerciseResponse.transaction_hash 
+      })
+      .eq('id', optionId);
+
+    if (updateError) throw updateError;
+
+    toast({
+      title: "Option Exercised Successfully",
+      description: `Exercised option #${optionId}`,
+    });
+
+  } catch (error) {
+    console.error('Exercise option error:', error);
+    toast({
+      title: "Exercise Failed",
+      description: error instanceof Error ? error.message : "Failed to exercise option",
+      variant: "destructive",
+    });
+  } finally {
+    setIsExercising(false);
+  }
+};
+
+const handleCancelOption = async () => {
+  if (!address || !account || !vaultContract) return;
+
+  try {
+    setIsCancelling(true);
+    const optionIdUint256 = uint256.bnToUint256(BigInt(optionId));
+
+    const cancelResponse = await account.execute({
+      contractAddress: VAULT_CONTRACT_ADDRESS,
+      entrypoint: "cancel_option",
+      calldata: [
+        optionIdUint256.low,
+        optionIdUint256.high
+      ]
+    });
+
+    await account.waitForTransaction(cancelResponse.transaction_hash);
+
+    // Update option status in database
+    const { error: updateError } = await supabase
+      .from('options')
+      .update({ 
+        status: 'expired',
+        tx_hash: cancelResponse.transaction_hash 
+      })
+      .eq('id', optionId);
+
+    if (updateError) throw updateError;
+
+    toast({
+      title: "Option Cancelled Successfully",
+      description: `Cancelled option #${optionId}`,
+    });
+
+  } catch (error) {
+    console.error('Cancel option error:', error);
+    toast({
+      title: "Cancel Failed",
+      description: error instanceof Error ? error.message : "Failed to cancel option",
+      variant: "destructive",
+    });
+  } finally {
+    setIsCancelling(false);
+  }
+};
+
   if (!address) {
     return null;
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Vault Management</CardTitle>
@@ -426,5 +529,84 @@ export function VaultManagement() {
       </CardContent>
 
     </Card>
+    <Card>
+      <CardHeader>
+        <CardTitle>Options Management</CardTitle>
+        <CardDescription>
+          Manage your options
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="deposit" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="expired">Expired</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active" className="space-y-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm text-muted-foreground">Option ID</label>
+                </div>
+                <Input
+                  type="number"
+                  placeholder="Option ID"
+                  value={optionId}
+                  onChange={(e) => setOptionId(e.target.value)}
+                  min="1"
+                  // max={formattedBalance}
+                  step="1"
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={handleExerciseOption}
+                // disabled={isDepositing || !depositAmount || Number(depositAmount) > Number(formattedBalance)}
+              >
+                {isExercising ? "Exercising..." : "Exercise Option"}
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="expired" className="space-y-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm text-muted-foreground">Option ID</label>
+                </div>
+                <Input
+                  type="number"
+                  placeholder="Option ID"
+                  value={optionId}
+                  onChange={(e) => setOptionId(e.target.value)}
+                  min="0"
+                  // max={maxWithdraw}
+                  step="1"
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={handleCancelOption}
+                // disabled={isWithdrawing || !withdrawAmount || Number(withdrawAmount) > Number(maxWithdraw)}
+              >
+                {isCancelling ? "Cancelling..." : "Cancel Option"}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+
+      <div className="mt-9">
+
+      <button onClick={handleCreateOptions} className="w-full bg-blue-500 text-white p-2 rounded-md">
+          Create Options
+        </button>
+      </div>
+      </CardContent>
+
+    </Card>
+
+    </>
   );
 }

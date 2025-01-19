@@ -130,6 +130,8 @@ export function ActiveOptions() {
     );
   }
 
+
+  // console.log(options);
   return (
     <Card className="p-6 gradient-border">
       <div className="space-y-4">
