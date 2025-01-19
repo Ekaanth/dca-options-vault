@@ -66,8 +66,8 @@ export function VaultDeposit({ onTransactionComplete, updateTrigger }: VaultDepo
 
       // Transfer tokens to vault
       const transferResponse = await account.execute({
-        contractAddress: STRK_TOKEN_ADDRESS,
-        entrypoint: "transfer",
+        contractAddress: VAULT_CONTRACT_ADDRESS,
+        entrypoint: "deposit",
         calldata: [
             amountUint256.low, 
             amountUint256.high
