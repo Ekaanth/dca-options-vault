@@ -13,8 +13,8 @@ export function useStarkPrice() {
       setIsLoading(true);
       setError(null);
       
-    //   const response = await fetch(`/api/coinmarketcap/cryptocurrency/quotes/latest?id=${STRK_ID}&convert=USD`, {
-      const response = await fetch(`/api/quotes/latest?id=${STRK_ID}&convert=USD`, {
+      const response = await fetch(`/api/coinmarketcap/cryptocurrency/quotes/latest?id=${STRK_ID}&convert=USD`, {
+      // const response = await fetch(`/api/quotes/latest?id=${STRK_ID}&convert=USD`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

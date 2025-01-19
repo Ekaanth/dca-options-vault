@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="#0A0B1E"/>
+  <g filter="url(#glow)">
+    <path d="M256 128C178.596 128 116 190.596 116 268C116 345.404 178.596 408 256 408C333.404 408 396 345.404 396 268C396 190.596 333.404 128 256 128ZM256 368C200.772 368 156 323.228 156 268C156 212.772 200.772 168 256 168C311.228 168 356 212.772 356 268C356 323.228 311.228 368 256 368Z" fill="#22D3EE"/>
+    <path d="M256 208C222.944 208 196 234.944 196 268C196 301.056 222.944 328 256 328C289.056 328 316 301.056 316 268C316 234.944 289.056 208 256 208ZM256 288C244.954 288 236 279.046 236 268C236 256.954 244.954 248 256 248C267.046 248 276 256.954 276 268C276 279.046 267.046 288 256 288Z" fill="#22D3EE"/>
+  </g>
+  <defs>
+    <filter id="glow" x="0" y="0" width="512" height="512" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#22D3EE" flood-opacity="0.3"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+</svg> 

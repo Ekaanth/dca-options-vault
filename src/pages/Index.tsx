@@ -2,7 +2,7 @@ import { VaultStats } from "@/components/VaultStats";
 import { VaultManagement } from "@/components/VaultDeposit";
 import { useAccount } from "@starknet-react/core";
 import { Card } from "@/components/ui/card";
-import { ArrowUpRight, DollarSign, LockIcon, RefreshCw, AlertCircle, Wallet } from "lucide-react";
+import { ArrowUpRight, DollarSign, LockIcon, RefreshCw, AlertCircle, Wallet, ArrowDownRight } from "lucide-react";
 import { VaultOverview } from "@/components/vault/VaultOverview";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -53,7 +53,8 @@ const Index = () => {
                   {!isPriceLoading && strkPrice > 0 && (
                     <p className={`text-sm flex items-center font-medium ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}% 
-                      <ArrowUpRight className="h-3 w-3 ml-1" />
+                      {priceChange >= 0 ? <ArrowUpRight className="h-3 w-3 ml-1" /> :  <ArrowDownRight className="h-3 w-3 ml-1" />}
+                     
                     </p>
                   )}
                 </div>

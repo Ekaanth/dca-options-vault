@@ -1,0 +1,27 @@
+{
+  "name": "STRK Option Vault DCA",
+  "short_name": "STRK Vault",
+  "description": "Automated covered call strategy with DCA reinvestment for STRK tokens",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0B1E",
+  "theme_color": "#22D3EE",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+} 
