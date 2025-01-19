@@ -17,9 +17,7 @@ interface PremiumStats {
 
 export function VaultStats() {
   const { address } = useAccount();
-  const { activePositions, loading: loadingPositions } = useActivePositions();
-  const { tvl, loading: loadingTvl, error: errorTvl } = useTotalValueLocked();
-  const { price: currentPrice, priceChange, isLoading, error, refetch } = useStarkPrice();
+  const { tvl, error: errorTvl } = useTotalValueLocked();
   const [tvlStrk, setTvlStrk] = useState<string>("0");
   const [activeOptionsCount, setActiveOptionsCount] = useState<number>(0);
   const [premiumStats, setPremiumStats] = useState<PremiumStats>({ totalPremium: 0, dailyGrowth: 0 });
@@ -84,12 +82,12 @@ export function VaultStats() {
         const { data: deposits } = await supabase
           .from('deposits')
           .select('amount')
-          .eq('status', 'confirmed');
+          .eq('status', 'deposit');
 
         const { data: withdrawals } = await supabase
           .from('withdrawals')
           .select('amount')
-          .eq('status', 'confirmed');
+          .eq('status', 'deposit');
 
         const totalDeposits = deposits?.reduce((sum, tx) => 
           sum + Number(tx.amount), 0
@@ -142,7 +140,7 @@ export function VaultStats() {
                   : `$${tvlUsd.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
-                    })}`
+                    })} USD`
                 }
               </p>
             </div>
@@ -179,7 +177,7 @@ export function VaultStats() {
               </div>
             </div>
           </div>
-          <LineChart className="h-8 w-8 text-primary animate-float" />
+          <DollarSign className="h-8 w-8 text-primary animate-float" />
         </div>
       </Card>
 

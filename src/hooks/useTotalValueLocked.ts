@@ -1,38 +1,42 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAccount } from "@starknet-react/core";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useStarkPrice } from './useStarkPrice';
 
 export function useTotalValueLocked() {
-  const { address } = useAccount();
   const [tvl, setTvl] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { price: strkPrice } = useStarkPrice();
+
+  const fetchTVL = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { data, error: dbError } = await supabase
+        .from('deposits')
+        .select('amount')
+        .eq('status', 'deposit');
+
+      if (dbError) throw dbError;
+
+      const totalDeposits = data?.reduce((sum, deposit) => sum + deposit.amount, 0) || 0;
+      if(strkPrice > 0) {
+        setTvl(totalDeposits * strkPrice);
+      } else {
+        setTvl(totalDeposits * 0.41);
+      }
+    } catch (err) {
+      console.error('Error fetching TVL:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch TVL');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTvl = async () => {
-      if (!address) return;
+    fetchTVL();
+  }, [strkPrice]); // Refetch when price updates
 
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('vaults')
-          .select('collateral_amount')
-          .eq('user_id', address)
-          .single();
-
-        if (error) throw error;
-
-        setTvl(data?.collateral_amount || 0);
-      } catch (error) {
-        console.error('Error fetching TVL:', error);
-        setError('Failed to fetch TVL');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTvl();
-  }, [address]);
-
-  return { tvl, loading, error };
+  return { tvl, isLoading, error, refetch: fetchTVL };
 }

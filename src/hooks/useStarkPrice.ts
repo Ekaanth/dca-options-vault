@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 
 const STRK_ID = '22691'; // STRK token ID on CoinMarketCap
+const API_BASE_URL = import.meta.env.PROD 
+  ? 'https://pro-api.coinmarketcap.com/v1'
+  : '/api/coinmarketcap';
+const API_KEY = import.meta.env.VITE_CMC_API_KEY;
 
 export function useStarkPrice() {
   const [price, setPrice] = useState<number>(0);
@@ -13,11 +17,11 @@ export function useStarkPrice() {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/coinmarketcap/cryptocurrency/quotes/latest?id=${STRK_ID}&convert=USD`, {
-      // const response = await fetch(`/api/quotes/latest?id=${STRK_ID}&convert=USD`, {
+      const response = await fetch(`${API_BASE_URL}/cryptocurrency/quotes/latest?id=${STRK_ID}&convert=USD`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          ...(import.meta.env.PROD ? { 'X-CMC_PRO_API_KEY': API_KEY } : {})
         }
       });
 
