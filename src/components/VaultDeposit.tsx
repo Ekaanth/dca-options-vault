@@ -11,7 +11,7 @@ import { STRK_TOKEN_ABI } from "@/abi/STRKToken.abi";
 import { VAULT_CONTRACT_ABI } from "@/abi/VaultContract.abi";
 
 // STRK token contract address on Starknet
-const STRK_TOKEN_ADDRESS = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+const STRK_TOKEN_ADDRESS = "0x36ca7e3d294a8579a515e6721f93ad0b6c007a11ba3a5e14159bef8f5bfd7f2";
 const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS;
 
 export function VaultManagement() {
@@ -29,6 +29,9 @@ export function VaultManagement() {
     address: address ?? undefined,
     token: STRK_TOKEN_ADDRESS,
   });
+
+  console.log("balance", balance);
+  
 
   // Format the balance for display
   const formattedBalance = balance ? (Number(balance.value) / 1e18).toFixed(6) : "0.000000";
@@ -100,9 +103,7 @@ export function VaultManagement() {
         entrypoint: "approve",
         calldata: [
           import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
-          amountUint256.low,
-          amountUint256.high
-        ]
+          amountUint256.low        ]
       });
 
       // Wait for transaction to be accepted
@@ -111,10 +112,10 @@ export function VaultManagement() {
 
       // Then transfer tokens to the vault
       const transferResponse = await account.execute({
-        contractAddress: STRK_TOKEN_ADDRESS,
-        entrypoint: "transfer",
+        contractAddress: import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+        entrypoint: "deposit",
         calldata: [
-          import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
+         
           amountUint256.low,
           amountUint256.high
         ]
@@ -177,37 +178,49 @@ export function VaultManagement() {
         contractAddress: import.meta.env.VITE_VAULT_CONTRACT_ADDRESS,
         entrypoint: "withdraw",
         calldata: [
-          STRK_TOKEN_ADDRESS, // token address
-          amountUint256.low,  // amount low
-          amountUint256.high  // amount high
+        "100","0"
         ]
       });
 
       // Wait for transaction to be accepted
       await account.waitForTransaction(withdrawResponse.transaction_hash);
 
-      // Create withdrawal record in database
-      const { data: userData } = await supabase
+      // Get user and vault data
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
         .eq('wallet_address', address)
         .single();
 
-      if (!userData?.id) {
+      if (userError || !userData?.id) {
         throw new Error('User not found');
       }
 
-      // Create withdrawal record using the same RPC as deposits
-      const { data: deposit, error } = await supabase
-        .rpc('create_deposit', {
-          p_user_id: userData.id,
-          p_amount: withdrawAmount,
-          p_token_address: STRK_TOKEN_ADDRESS,
-          p_tx_hash: withdrawResponse.transaction_hash,
-          p_type: 'withdraw'  // Specify this is a withdrawal
-        });
+      const { data: vaultData, error: vaultError } = await supabase
+        .from('vaults')
+        .select('id')
+        .eq('user_id', userData.id)
+        .single();
 
-      if (error) throw error;
+      if (vaultError || !vaultData?.id) {
+        throw new Error('Vault not found');
+      }
+
+      // Create withdrawal record
+      const { data: withdrawal, error: withdrawalError } = await supabase
+        .from('withdrawals')
+        .insert({
+          user_id: userData.id,
+          vault_id: vaultData.id,
+          amount: withdrawAmount,
+          token_address: STRK_TOKEN_ADDRESS,
+          tx_hash: withdrawResponse.transaction_hash,
+          status: 'withdraw'
+        })
+        .select()
+        .single();
+
+      if (withdrawalError) throw withdrawalError;
 
       toast({
         title: "Withdrawal Successful",
@@ -287,7 +300,7 @@ export function VaultManagement() {
               <Button
                 className="w-full"
                 onClick={handleDeposit}
-                disabled={isDepositing || !depositAmount || Number(depositAmount) > Number(formattedBalance)}
+                // disabled={isDepositing || !depositAmount || Number(depositAmount) > Number(formattedBalance)}
               >
                 {isDepositing ? "Depositing..." : "Deposit STRK"}
               </Button>
