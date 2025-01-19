@@ -263,7 +263,7 @@ export function VaultManagement() {
 
       // Convert strike price and amount to Uint256 format
       const strikePriceBN = BigInt(1 * 10**18); 
-      const amountBN = BigInt(0.01 * 10**18);
+      const amountBN = BigInt(0.00000001 * 10**18);
       const strikePriceUint256 = uint256.bnToUint256(strikePriceBN);
       const amountUint256 = uint256.bnToUint256(amountBN);
 
@@ -279,8 +279,7 @@ export function VaultManagement() {
           strikePriceUint256.low,
           strikePriceUint256.high,
           expiryBlock.toString(),
-          amountUint256.low,
-          amountUint256.high
+       "1"
         ]
       });
 
