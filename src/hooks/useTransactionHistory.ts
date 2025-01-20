@@ -12,7 +12,7 @@ interface Transaction {
 
 const PAGE_SIZE = 10;
 
-export function useTransactionHistory(address: string | undefined) {
+export function useTransactionHistory(address: string | undefined, updateTrigger?: number) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export function useTransactionHistory(address: string | undefined) {
 
   useEffect(() => {
     fetchTransactions(page);
-  }, [address, page]);
+  }, [address, page, updateTrigger]);
 
   const loadMore = () => {
     if (!isLoading && hasMore) {

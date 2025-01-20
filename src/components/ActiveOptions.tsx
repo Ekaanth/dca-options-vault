@@ -35,7 +35,11 @@ interface Vault {
   collateral_amount: number;
 }
 
-export function ActiveOptions() {
+interface ActiveOptionsProps {
+  updateTrigger: number;
+}
+
+export function ActiveOptions({ updateTrigger }: ActiveOptionsProps) {
   const [options, setOptions] = useState<(Option & { vault: Vault })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -45,7 +49,7 @@ export function ActiveOptions() {
   const handleBuy = async(optionId: number) => {
     console.log("Buy option with ID:", optionId);
 
-    const optionIdBN = BigInt(1);
+    const optionIdBN = BigInt(optionId);
     const amountBN = BigInt(parseFloat("0.00000000000001") * 10**18);
 
     const optionIdUint256 = uint256.bnToUint256(optionIdBN);
@@ -86,7 +90,7 @@ export function ActiveOptions() {
     if (!account) return;
 
     try {
-      const optionIdBN = BigInt(1);
+      const optionIdBN = BigInt(optionId);
       const optionIdUint256 = uint256.bnToUint256(optionIdBN);
       const amountBN = BigInt(parseFloat("0.00000000000001") * 10**18);
 
@@ -206,7 +210,7 @@ export function ActiveOptions() {
     };
 
     fetchData();
-  }, [address, toast]);
+  }, [address, toast, updateTrigger]);
 
   const totalLockedValue = options.reduce((acc, option) => 
     option.status === "active" ? acc + Number(option.vault.collateral_amount) : acc, 0
@@ -252,11 +256,10 @@ export function ActiveOptions() {
             No active options
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Strike Price</TableHead>
                   <TableHead>Premium</TableHead>
@@ -269,9 +272,6 @@ export function ActiveOptions() {
               <TableBody>
                 {options.map((option) => (
                   <TableRow key={option.id}>
-                    <TableCell className="font-mono">
-                      {option.id}
-                    </TableCell>
                     <TableCell className="font-mono">
                       {option.option_type.toUpperCase()}
                     </TableCell>

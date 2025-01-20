@@ -18,13 +18,23 @@ export function useTotalValueLocked() {
         .select('amount')
         .eq('status', 'deposit');
 
+      const { data: withdrawals, error: WithdrawError } = await supabase
+        .from('withdrawals')
+        .select('amount')
+        .eq('status', 'withdraw');
+
       if (dbError) throw dbError;
+      if(WithdrawError) throw WithdrawError;
 
       const totalDeposits = data?.reduce((sum, deposit) => sum + deposit.amount, 0) || 0;
+      const totalWithdrawals = withdrawals?.reduce((sum, withdrawal) => sum + withdrawal.amount, 0) || 0;
+
+      const calculatedTvl = totalDeposits - totalWithdrawals;
+
       if(strkPrice > 0) {
-        setTvl(totalDeposits * strkPrice);
+        setTvl(calculatedTvl);
       } else {
-        setTvl(totalDeposits * 0.41);
+        setTvl(0);
       }
     } catch (err) {
       console.error('Error fetching TVL:', err);

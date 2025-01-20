@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VaultDeposit } from "./VaultDeposit";
 import { VaultWithdraw } from "./VaultWithdraw";
 import { useAccount } from "@starknet-react/core";
@@ -23,7 +23,8 @@ export function VaultManagement({ onTransactionComplete }: VaultManagementProps)
 
   // Function to trigger updates in child components
   const handleTransactionComplete = () => {
-    onTransactionComplete();
+    setUpdateTrigger(prev => prev + 1); // Increment the update trigger
+    onTransactionComplete(); // Call the parent's update function
   };
 
   const handleCreateOptions = async () => {
@@ -125,8 +126,12 @@ export function VaultManagement({ onTransactionComplete }: VaultManagementProps)
             <TabsTrigger value="deposit">Deposit</TabsTrigger>
             <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
           </TabsList>
-          <VaultDeposit onTransactionComplete={handleTransactionComplete} updateTrigger={updateTrigger} />
-          <VaultWithdraw onTransactionComplete={handleTransactionComplete} updateTrigger={updateTrigger} />
+          <TabsContent value="deposit">
+            <VaultDeposit onTransactionComplete={handleTransactionComplete} updateTrigger={updateTrigger} />
+          </TabsContent>
+          <TabsContent value="withdraw">
+            <VaultWithdraw onTransactionComplete={handleTransactionComplete} updateTrigger={updateTrigger} />
+          </TabsContent>
         </Tabs>
 
         <div className="mt-6">

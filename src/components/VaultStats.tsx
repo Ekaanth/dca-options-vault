@@ -1,10 +1,13 @@
 import { Card } from "@/components/ui/card";
-import { Timer, LineChart, DollarSign, LockIcon,TrendingUp } from "lucide-react";
-import { useAccount } from "@starknet-react/core";
+import { Timer, LineChart, DollarSign, LockIcon, TrendingUp } from "lucide-react";
+import { useAccount, useContract } from "@starknet-react/core";
 import { useStarkPrice } from "@/hooks/useStarkPrice";
-import { useTotalValueLocked } from "@/hooks/useTotalValueLocked";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { VAULT_CONTRACT_ABI } from "@/abi/VaultContract.abi";
+import { useTotalValueLocked } from "@/hooks/useTotalValueLocked";
+
+const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS;
 
 interface PremiumStats {
   totalPremium: number;
@@ -22,79 +25,21 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
   const [premiumStats, setPremiumStats] = useState<PremiumStats>({ totalPremium: 0, dailyGrowth: 0 });
   const [isDataLoading, setIsDataLoading] = useState(true);
   const { price: strkPrice, isLoading: isPriceLoading } = useStarkPrice();
+  const { tvl, isLoading, error, refetch: fetchTVL } = useTotalValueLocked();
+  
+  // Get vault contract
+  const { contract: vaultContract } = useContract({
+    address: VAULT_CONTRACT_ADDRESS,
+    abi: VAULT_CONTRACT_ABI,
+  });
 
   // Fetch TVL and Premium Stats
   useEffect(() => {
     const fetchData = async () => {
-      if (!address) return;
+      if (!address || !vaultContract) return;
 
       try {
         setIsDataLoading(true);
-
-        // Get user ID first
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id')
-          .eq('wallet_address', address)
-          .single();
-
-        if (!userData?.id) return;
-
-        // Calculate total premium earned
-        const { data: totalPremiumData, error: premiumError } = await supabase
-          .from('options')
-          .select('premium, created_at')
-          .eq('status', ['active', 'executed']);
-
-        if (premiumError) throw premiumError;
-
-        // Calculate total premium
-        const totalPremium = totalPremiumData?.reduce((sum, option) => 
-          sum + Number(option.premium), 0
-        ) || 0;
-
-        // Calculate daily growth (last 24 hours)
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        const { data: dailyPremiumData, error: dailyError } = await supabase
-          .from('options')
-          .select('premium')
-          .in('status', ['active', 'executed'])
-          .gte('created_at', yesterday.toISOString());
-
-        if (dailyError) throw dailyError;
-
-        const dailyPremium = dailyPremiumData?.reduce((sum, option) => 
-          sum + Number(option.premium), 0
-        ) || 0;
-
-        setPremiumStats({
-          totalPremium,
-          dailyGrowth: dailyPremium
-        });
-
-        // Get all deposits
-        const { data: deposits } = await supabase
-          .from('deposits')
-          .select('amount')
-          .eq('status', 'deposit');
-
-        const { data: withdrawals } = await supabase
-          .from('withdrawals')
-          .select('amount')
-          .eq('status', 'deposit');
-
-        const totalDeposits = deposits?.reduce((sum, tx) => 
-          sum + Number(tx.amount), 0
-        ) || 0;
-
-        const totalWithdrawals = withdrawals?.reduce((sum, tx) => 
-          sum + Number(tx.amount), 0
-        ) || 0;
-
-        const calculatedTvl = totalDeposits - totalWithdrawals;
-        setTvlStrk(calculatedTvl.toFixed(2));
 
         // Get active options count
         const { count: activeCount } = await supabase
@@ -103,6 +48,28 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
           .eq('status', 'active');
 
         setActiveOptionsCount(activeCount || 0);
+
+        // Get premium stats
+        const { data: premiumData } = await supabase
+          .from('options')
+          .select('premium, created_at')
+          .in('status', ['active', 'exercised']);
+
+        if (premiumData) {
+          const totalPremium = premiumData.reduce((sum, option) => sum + Number(option.premium), 0);
+          
+          // Calculate daily growth (premiums from last 24h)
+          const oneDayAgo = new Date();
+          oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+          const dailyPremium = premiumData
+            .filter(option => new Date(option.created_at) > oneDayAgo)
+            .reduce((sum, option) => sum + Number(option.premium), 0);
+
+          setPremiumStats({
+            totalPremium,
+            dailyGrowth: dailyPremium
+          });
+        }
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -115,7 +82,7 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
     };
 
     fetchData();
-  }, [address, updateTrigger]);
+  }, [address, vaultContract, updateTrigger]);
 
   // Calculate USD value
   const tvlUsd = Number(tvlStrk) * (strkPrice || 0);
@@ -128,15 +95,12 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
             <p className="text-sm font-medium text-muted-foreground">Total Value Locked</p>
             <div className="flex flex-col gap-1">
               <h2 className="text-2xl font-bold">
-                {isDataLoading ? "Loading..." : `${tvlStrk} STRK`}
+                {isDataLoading || isLoading? "Loading..." : `${tvl} STRK`}
               </h2>
               <p className="text-sm text-muted-foreground">
                 {isDataLoading || isPriceLoading 
                   ? "Calculating..." 
-                  : `$${tvlUsd.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    })} USD`
+                  : `$ ${tvl * strkPrice} USD`
                 }
               </p>
             </div>

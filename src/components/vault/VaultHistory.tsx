@@ -4,7 +4,11 @@ import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
-export function VaultHistory() {
+interface VaultHistoryProps {
+  updateTrigger: number;
+}
+
+export function VaultHistory({ updateTrigger }: VaultHistoryProps) {
   const { address } = useAccount();
   const { 
     transactions, 
@@ -15,7 +19,7 @@ export function VaultHistory() {
     page,
     totalCount,
     pageSize
-  } = useTransactionHistory(address);
+  } = useTransactionHistory(address, updateTrigger);
 
   const handleRowClick = (txHash: string) => {
     window.open(`https://sepolia.starkscan.co/tx/${txHash}`, '_blank');

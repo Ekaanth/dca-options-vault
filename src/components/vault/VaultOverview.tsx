@@ -4,7 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccount } from "@starknet-react/core";
 import { ActiveOptions } from "../ActiveOptions";
 
-export function VaultOverview() {
+interface VaultOverviewProps {
+  updateTrigger: number;
+}
+
+export function VaultOverview({ updateTrigger }: VaultOverviewProps) {
   const { address } = useAccount();
 
   if (!address) return null;
@@ -27,14 +31,14 @@ export function VaultOverview() {
           <TabsContent value="options">
             <div className="space-y-4">
               <div className="text-center py-4 text-muted-foreground">
-                <ActiveOptions />
+                <ActiveOptions updateTrigger={updateTrigger} />
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="history">
             <div className="space-y-4">
-              <VaultHistory />
+              <VaultHistory updateTrigger={updateTrigger} />
             </div>
           </TabsContent>
         </Tabs>
