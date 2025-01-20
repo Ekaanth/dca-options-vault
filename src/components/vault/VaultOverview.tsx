@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccount } from "@starknet-react/core";
 import { ActiveOptions } from "../ActiveOptions";
+import { useState } from "react";
 
 interface VaultOverviewProps {
   updateTrigger: number;
@@ -10,6 +11,7 @@ interface VaultOverviewProps {
 
 export function VaultOverview({ updateTrigger }: VaultOverviewProps) {
   const { address } = useAccount();
+  const [localUpdateTrigger, setLocalUpdateTrigger] = useState(0);
 
   if (!address) return null;
 
@@ -31,14 +33,17 @@ export function VaultOverview({ updateTrigger }: VaultOverviewProps) {
           <TabsContent value="options">
             <div className="space-y-4">
               <div className="text-center py-4 text-muted-foreground">
-                <ActiveOptions updateTrigger={updateTrigger} />
+                <ActiveOptions 
+                  updateTrigger={updateTrigger + localUpdateTrigger} 
+                  onTransactionComplete={() => setLocalUpdateTrigger(prev => prev + 1)} 
+                />
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="history">
             <div className="space-y-4">
-              <VaultHistory updateTrigger={updateTrigger} />
+              <VaultHistory updateTrigger={updateTrigger + localUpdateTrigger} />
             </div>
           </TabsContent>
         </Tabs>

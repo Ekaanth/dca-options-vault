@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStarkPrice } from "@/hooks/useStarkPrice";
 import { useState } from "react";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const { address } = useAccount();
@@ -128,6 +129,7 @@ const Index = () => {
           </div>
         </Card>
       )}
+              <Footer />
     </div>
   );
 };

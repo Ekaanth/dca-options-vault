@@ -37,9 +37,10 @@ interface Vault {
 
 interface ActiveOptionsProps {
   updateTrigger: number;
+  onTransactionComplete: () => void;
 }
 
-export function ActiveOptions({ updateTrigger }: ActiveOptionsProps) {
+export function ActiveOptions({ updateTrigger, onTransactionComplete }: ActiveOptionsProps) {
   const [options, setOptions] = useState<(Option & { vault: Vault })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -49,7 +50,7 @@ export function ActiveOptions({ updateTrigger }: ActiveOptionsProps) {
   const handleBuy = async(optionId: number) => {
     console.log("Buy option with ID:", optionId);
 
-    const optionIdBN = BigInt(optionId);
+    const optionIdBN = BigInt(2);
     const amountBN = BigInt(parseFloat("0.00000000000001") * 10**18);
 
     const optionIdUint256 = uint256.bnToUint256(optionIdBN);
@@ -77,20 +78,20 @@ export function ActiveOptions({ updateTrigger }: ActiveOptionsProps) {
       })
       .eq('id', optionId);
 
-    if (error) {
-      console.error('Error updating option:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update option status",
-        variant: "destructive"
-      });
-    }
+    if (error) throw error;
+    
+    onTransactionComplete(); // Trigger refresh of components
+
+    toast({
+      title: "Success",
+      description: "Option bought successfully"
+    });
   };
   const handleExercise = async (optionId: number) => {
     if (!account) return;
 
     try {
-      const optionIdBN = BigInt(optionId);
+      const optionIdBN = BigInt(2);
       const optionIdUint256 = uint256.bnToUint256(optionIdBN);
       const amountBN = BigInt(parseFloat("0.00000000000001") * 10**18);
 
@@ -113,7 +114,7 @@ export function ActiveOptions({ updateTrigger }: ActiveOptionsProps) {
       const { error } = await supabase
         .from('options')
         .update({
-          status: 'exercised',
+          status: 'executed',
           tx_hash: cancelResponse.transaction_hash
         })
         .eq('id', optionId);
@@ -132,6 +133,7 @@ export function ActiveOptions({ updateTrigger }: ActiveOptionsProps) {
         description: "Option exercised successfully"
       });
 
+      onTransactionComplete(); // Trigger refresh of components
     } catch (error) {
       console.error('Error cancelling option:', error);
       toast({

@@ -26,20 +26,80 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
   const [isDataLoading, setIsDataLoading] = useState(true);
   const { price: strkPrice, isLoading: isPriceLoading } = useStarkPrice();
   const { tvl, isLoading, error, refetch: fetchTVL } = useTotalValueLocked();
-  
-  // Get vault contract
-  const { contract: vaultContract } = useContract({
-    address: VAULT_CONTRACT_ADDRESS,
-    abi: VAULT_CONTRACT_ABI,
-  });
 
-  // Fetch TVL and Premium Stats
+
   useEffect(() => {
     const fetchData = async () => {
-      if (!address || !vaultContract) return;
+      if (!address) return;
 
       try {
         setIsDataLoading(true);
+
+        // Get user ID first
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('wallet_address', address)
+          .single();
+
+        if (!userData?.id) return;
+
+        // Calculate total premium earned
+        const { data: totalPremiumData, error: premiumError } = await supabase
+          .from('options')
+          .select('premium, created_at')
+          .eq('user_id', userData.id)
+          .in('status', ['active', 'executed']);
+
+        if (premiumError) throw premiumError;
+
+        // Calculate total premium
+        const totalPremium = totalPremiumData?.reduce((sum, option) => 
+          sum + Number(option.premium), 0
+        ) || 0;
+
+        // Calculate daily growth (last 24 hours)
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const { data: dailyPremiumData, error: dailyError } = await supabase
+          .from('options')
+          .select('premium')
+          .in('status', ['active', 'executed'])
+          .gte('created_at', yesterday.toISOString());
+
+        if (dailyError) throw dailyError;
+
+        const dailyPremium = dailyPremiumData?.reduce((sum, option) => 
+          sum + Number(option.premium), 0
+        ) || 0;
+
+        setPremiumStats({
+          totalPremium,
+          dailyGrowth: dailyPremium
+        });
+
+        // Get all deposits
+        const { data: deposits } = await supabase
+          .from('deposits')
+          .select('amount')
+          .eq('status', 'deposit');
+
+        const { data: withdrawals } = await supabase
+          .from('withdrawals')
+          .select('amount')
+          .eq('status', 'deposit');
+
+        const totalDeposits = deposits?.reduce((sum, tx) => 
+          sum + Number(tx.amount), 0
+        ) || 0;
+
+        const totalWithdrawals = withdrawals?.reduce((sum, tx) => 
+          sum + Number(tx.amount), 0
+        ) || 0;
+
+        const calculatedTvl = totalDeposits - totalWithdrawals;
+        setTvlStrk(calculatedTvl.toFixed(2));
 
         // Get active options count
         const { count: activeCount } = await supabase
@@ -48,28 +108,6 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
           .eq('status', 'active');
 
         setActiveOptionsCount(activeCount || 0);
-
-        // Get premium stats
-        const { data: premiumData } = await supabase
-          .from('options')
-          .select('premium, created_at')
-          .in('status', ['active', 'exercised']);
-
-        if (premiumData) {
-          const totalPremium = premiumData.reduce((sum, option) => sum + Number(option.premium), 0);
-          
-          // Calculate daily growth (premiums from last 24h)
-          const oneDayAgo = new Date();
-          oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-          const dailyPremium = premiumData
-            .filter(option => new Date(option.created_at) > oneDayAgo)
-            .reduce((sum, option) => sum + Number(option.premium), 0);
-
-          setPremiumStats({
-            totalPremium,
-            dailyGrowth: dailyPremium
-          });
-        }
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -82,10 +120,8 @@ export function VaultStats({ updateTrigger }: VaultStatsProps) {
     };
 
     fetchData();
-  }, [address, vaultContract, updateTrigger]);
+  }, [address, updateTrigger]);
 
-  // Calculate USD value
-  const tvlUsd = Number(tvlStrk) * (strkPrice || 0);
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

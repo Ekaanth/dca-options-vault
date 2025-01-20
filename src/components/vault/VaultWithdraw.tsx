@@ -87,10 +87,6 @@ export function VaultWithdraw({ onTransactionComplete, updateTrigger }: VaultWit
     fetchMaxWithdraw();
   }, [address, fetchMaxWithdraw, updateTrigger]);
 
-  const handleSetMaxWithdraw = () => {
-    setWithdrawAmount(maxWithdraw);
-  };
-
   const handleWithdraw = async () => {
     if (!address || !withdrawAmount || !account || !vaultContract) return;
 
@@ -120,13 +116,25 @@ export function VaultWithdraw({ onTransactionComplete, updateTrigger }: VaultWit
 
       if (!userData?.id) throw new Error('User not found');
 
-      await supabase.rpc('create_deposit', {
-        p_user_id: userData.id,
-        p_amount: withdrawAmount,
-        p_token_address: STRK_TOKEN_ADDRESS,
-        p_tx_hash: withdrawResponse.transaction_hash,
-        p_type: 'withdraw'
-      });
+      // Get user's vault ID
+      const { data: vaultData } = await supabase
+        .from('vaults')
+        .select('id')
+        .eq('user_id', userData.id)
+        .single();
+
+      if (!vaultData?.id) throw new Error('Vault not found');
+
+      await supabase
+        .from('withdrawals')
+        .insert({
+          user_id: userData.id,
+          vault_id: vaultData.id,
+          amount: withdrawAmount,
+          token_address: STRK_TOKEN_ADDRESS,
+          tx_hash: withdrawResponse.transaction_hash,
+          status: 'withdraw'
+        });
 
       toast({
         title: "Withdrawal Successful",
@@ -157,14 +165,6 @@ export function VaultWithdraw({ onTransactionComplete, updateTrigger }: VaultWit
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm text-muted-foreground">Amount to withdraw</label>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleSetMaxWithdraw}
-              disabled={isLoadingMax}
-            >
-              Max: {isLoadingMax ? "Loading..." : `${Number(maxWithdraw).toFixed(6)} STRK`}
-            </Button>
           </div>
           <Input
             type="number"
@@ -179,7 +179,7 @@ export function VaultWithdraw({ onTransactionComplete, updateTrigger }: VaultWit
         <Button
           className="w-full"
           onClick={handleWithdraw}
-          disabled={isWithdrawing || !withdrawAmount || Number(withdrawAmount) > Number(maxWithdraw)}
+          // disabled={isWithdrawing || !withdrawAmount || Number(withdrawAmount) > Number(maxWithdraw)}
         >
           {isWithdrawing ? "Withdrawing..." : "Withdraw STRK"}
         </Button>
